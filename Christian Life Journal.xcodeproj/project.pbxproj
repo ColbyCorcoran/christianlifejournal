@@ -6,6 +6,23 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B60C524E2E05BC0D00800EB8 /* DateUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C524D2E05BC0D00800EB8 /* DateUtils.swift */; };
+		B60C52502E05BC3E00800EB8 /* JournalSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C524F2E05BC3E00800EB8 /* JournalSection.swift */; };
+		B60C52562E05BC7B00800EB8 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C52552E05BC7B00800EB8 /* DashboardView.swift */; };
+		B60C525A2E05BC9F00800EB8 /* QuickAddMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C52592E05BC9F00800EB8 /* QuickAddMenu.swift */; };
+		B60C525C2E05BD0C00800EB8 /* SectionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C525B2E05BD0C00800EB8 /* SectionListView.swift */; };
+		B60C525E2E05BD1700800EB8 /* AddEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C525D2E05BD1700800EB8 /* AddEntryView.swift */; };
+		B60C52642E05D0C000800EB8 /* AddPersonalTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C52632E05D0C000800EB8 /* AddPersonalTimeView.swift */; };
+		B60C52662E05D0CA00800EB8 /* AddSermonNotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C52652E05D0CA00800EB8 /* AddSermonNotesView.swift */; };
+		B60C52682E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C52672E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift */; };
+		B60C526A2E05DFD700800EB8 /* JournalEntryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C52692E05DFD700800EB8 /* JournalEntryDetailView.swift */; };
+		B60C526E2E05E56800800EB8 /* CardSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C526D2E05E56800800EB8 /* CardSectionView.swift */; };
+		B60C52702E05FB7500800EB8 /* JournalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C526F2E05FB7500800EB8 /* JournalModels.swift */; };
+		B6693C522E06050F002FD994 /* MiniCardButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6693C512E06050F002FD994 /* MiniCardButton.swift */; };
+		B6693C542E0607B1002FD994 /* Color+AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6693C532E0607B1002FD994 /* Color+AppColors.swift */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		B60C520E2E05B6BE00800EB8 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -27,22 +44,26 @@
 		B60C51FE2E05B6BD00800EB8 /* Christian Life Journal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Christian Life Journal.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B60C520D2E05B6BE00800EB8 /* Christian Life JournalTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Christian Life JournalTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B60C52172E05B6BE00800EB8 /* Christian Life JournalUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Christian Life JournalUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
+		B60C524D2E05BC0D00800EB8 /* DateUtils.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DateUtils.swift; sourceTree = "<group>"; };
+		B60C524F2E05BC3E00800EB8 /* JournalSection.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalSection.swift; sourceTree = "<group>"; };
+		B60C52552E05BC7B00800EB8 /* DashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DashboardView.swift; sourceTree = "<group>"; };
+		B60C52592E05BC9F00800EB8 /* QuickAddMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QuickAddMenu.swift; sourceTree = "<group>"; };
+		B60C525B2E05BD0C00800EB8 /* SectionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SectionListView.swift; sourceTree = "<group>"; };
+		B60C525D2E05BD1700800EB8 /* AddEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEntryView.swift; sourceTree = "<group>"; };
+		B60C52632E05D0C000800EB8 /* AddPersonalTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPersonalTimeView.swift; sourceTree = "<group>"; };
+		B60C52652E05D0CA00800EB8 /* AddSermonNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSermonNotesView.swift; sourceTree = "<group>"; };
+		B60C52672E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddScriptureToMemorizeView.swift; sourceTree = "<group>"; };
+		B60C52692E05DFD700800EB8 /* JournalEntryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalEntryDetailView.swift; sourceTree = "<group>"; };
+		B60C526D2E05E56800800EB8 /* CardSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSectionView.swift; sourceTree = "<group>"; };
+		B60C526F2E05FB7500800EB8 /* JournalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalModels.swift; sourceTree = "<group>"; };
+		B6693C512E06050F002FD994 /* MiniCardButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniCardButton.swift; sourceTree = "<group>"; };
+		B6693C532E0607B1002FD994 /* Color+AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+AppColors.swift"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		B60C52002E05B6BD00800EB8 /* Christian Life Journal */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = "Christian Life Journal";
-			sourceTree = "<group>";
-		};
-		B60C52102E05B6BE00800EB8 /* Christian Life JournalTests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Christian Life JournalTests";
-			sourceTree = "<group>";
-		};
-		B60C521A2E05B6BE00800EB8 /* Christian Life JournalUITests */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = "Christian Life JournalUITests";
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -75,9 +96,11 @@
 		B60C51F52E05B6BD00800EB8 = {
 			isa = PBXGroup;
 			children = (
+				B60C524C2E05BBDD00800EB8 /* Supporting */,
+				B60C524B2E05BBD700800EB8 /* Views */,
+				B60C524A2E05BBD100800EB8 /* ViewModels */,
+				B60C52492E05BBC800800EB8 /* Models */,
 				B60C52002E05B6BD00800EB8 /* Christian Life Journal */,
-				B60C52102E05B6BE00800EB8 /* Christian Life JournalTests */,
-				B60C521A2E05B6BE00800EB8 /* Christian Life JournalUITests */,
 				B60C51FF2E05B6BD00800EB8 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -90,6 +113,48 @@
 				B60C52172E05B6BE00800EB8 /* Christian Life JournalUITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		B60C52492E05BBC800800EB8 /* Models */ = {
+			isa = PBXGroup;
+			children = (
+				B60C524F2E05BC3E00800EB8 /* JournalSection.swift */,
+				B60C526F2E05FB7500800EB8 /* JournalModels.swift */,
+			);
+			path = Models;
+			sourceTree = "<group>";
+		};
+		B60C524A2E05BBD100800EB8 /* ViewModels */ = {
+			isa = PBXGroup;
+			children = (
+			);
+			path = ViewModels;
+			sourceTree = "<group>";
+		};
+		B60C524B2E05BBD700800EB8 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				B60C52552E05BC7B00800EB8 /* DashboardView.swift */,
+				B60C52592E05BC9F00800EB8 /* QuickAddMenu.swift */,
+				B60C525B2E05BD0C00800EB8 /* SectionListView.swift */,
+				B60C525D2E05BD1700800EB8 /* AddEntryView.swift */,
+				B60C52632E05D0C000800EB8 /* AddPersonalTimeView.swift */,
+				B60C52652E05D0CA00800EB8 /* AddSermonNotesView.swift */,
+				B60C52672E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift */,
+				B60C52692E05DFD700800EB8 /* JournalEntryDetailView.swift */,
+				B60C526D2E05E56800800EB8 /* CardSectionView.swift */,
+				B6693C512E06050F002FD994 /* MiniCardButton.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		B60C524C2E05BBDD00800EB8 /* Supporting */ = {
+			isa = PBXGroup;
+			children = (
+				B60C524D2E05BC0D00800EB8 /* DateUtils.swift */,
+				B6693C532E0607B1002FD994 /* Color+AppColors.swift */,
+			);
+			path = Supporting;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -130,9 +195,6 @@
 			dependencies = (
 				B60C520F2E05B6BE00800EB8 /* PBXTargetDependency */,
 			);
-			fileSystemSynchronizedGroups = (
-				B60C52102E05B6BE00800EB8 /* Christian Life JournalTests */,
-			);
 			name = "Christian Life JournalTests";
 			packageProductDependencies = (
 			);
@@ -152,9 +214,6 @@
 			);
 			dependencies = (
 				B60C52192E05B6BE00800EB8 /* PBXTargetDependency */,
-			);
-			fileSystemSynchronizedGroups = (
-				B60C521A2E05B6BE00800EB8 /* Christian Life JournalUITests */,
 			);
 			name = "Christian Life JournalUITests";
 			packageProductDependencies = (
@@ -236,6 +295,20 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B60C52562E05BC7B00800EB8 /* DashboardView.swift in Sources */,
+				B60C52642E05D0C000800EB8 /* AddPersonalTimeView.swift in Sources */,
+				B60C525E2E05BD1700800EB8 /* AddEntryView.swift in Sources */,
+				B60C526A2E05DFD700800EB8 /* JournalEntryDetailView.swift in Sources */,
+				B60C52682E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift in Sources */,
+				B60C52502E05BC3E00800EB8 /* JournalSection.swift in Sources */,
+				B60C525C2E05BD0C00800EB8 /* SectionListView.swift in Sources */,
+				B60C526E2E05E56800800EB8 /* CardSectionView.swift in Sources */,
+				B60C525A2E05BC9F00800EB8 /* QuickAddMenu.swift in Sources */,
+				B60C52662E05D0CA00800EB8 /* AddSermonNotesView.swift in Sources */,
+				B60C524E2E05BC0D00800EB8 /* DateUtils.swift in Sources */,
+				B6693C542E0607B1002FD994 /* Color+AppColors.swift in Sources */,
+				B6693C522E06050F002FD994 /* MiniCardButton.swift in Sources */,
+				B60C52702E05FB7500800EB8 /* JournalModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
