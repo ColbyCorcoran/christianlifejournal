@@ -3,7 +3,7 @@
 //  Christian Life Journal
 //
 //  Created by Colby Corcoran on 6/20/25.
-//
+
 import SwiftUI
 import SwiftData
 
@@ -23,60 +23,63 @@ struct SectionListView: View {
     }
 
     var body: some View {
-        List {
-            ForEach(entries) { entry in
-                NavigationLink(destination: JournalEntryDetailView(entry: entry)) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(entry.title)
-                            .font(.headline)
-                        Text(formattedDate(entry.date))
-                            .font(.caption)
-                            .foregroundColor(.gray)
+        ZStack {
+            Color.appWhite.ignoresSafeArea() // Custom background
+
+            List {
+                ForEach(entries) { entry in
+                    NavigationLink(destination: JournalEntryDetailView(entry: entry)) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(entry.title)
+                                .font(.headline)
+                            Text(formattedDate(entry.date))
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.vertical, 4)
                     }
-                    .padding(.vertical, 4)
-                }
-                .swipeActions(edge: .trailing) {
-                    Button(role: .destructive) {
-                        entryToDelete = entry
-                        showDeleteAlert = true
-                    } label: {
-                        Label("Delete", systemImage: "trash")
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
+                            entryToDelete = entry
+                            showDeleteAlert = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                        Button {
+                            entryToEdit = entry
+                            showEditSheet = true
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(Color.appBlue)
                     }
-                    Button {
-                        entryToEdit = entry
-                        showEditSheet = true
-                    } label: {
-                        Label("Edit", systemImage: "pencil")
-                    }
-                    .tint(Color.appBlue)
                 }
             }
-        }
-        .navigationTitle(section.rawValue)
-        .toolbar {
-            if section != .personalTime {
+            .tint(Color.appBlue)
+            .navigationTitle(section.rawValue)
+            .alert("Delete Entry?", isPresented: $showDeleteAlert, presenting: entryToDelete) { entry in
+                Button("Delete", role: .destructive) {
+                    modelContext.delete(entry)
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: { entry in
+                Text("Are you sure you want to delete \"\(entry.title)\"?")
+            }
+            .sheet(isPresented: $showAdd) {
+                addEntrySheetView(for: section)
+            }
+            .sheet(isPresented: $showEditSheet) {
+                editEntrySheetView(for: section, entry: entryToEdit)
+            }
+            .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: { showAdd = true }) {
                         Image(systemName: "plus")
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
         }
-        .sheet(isPresented: $showAdd) {
-            addEntrySheetView(for: section)
-        }
-        .sheet(isPresented: $showEditSheet) {
-            editEntrySheetView(for: section, entry: entryToEdit)
-        }
-        .alert("Delete Entry?", isPresented: $showDeleteAlert, presenting: entryToDelete) { entry in
-            Button("Delete", role: .destructive) {
-                modelContext.delete(entry)
-            }
-            Button("Cancel", role: .cancel) {}
-        } message: { entry in
-            Text("Are you sure you want to delete \"\(entry.title)\"?")
-        }
-        .tint(Color.appBlue)
     }
 
     // MARK: - Add/Edit Entry Sheet Helpers

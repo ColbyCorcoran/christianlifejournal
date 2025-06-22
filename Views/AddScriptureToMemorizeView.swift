@@ -33,7 +33,7 @@ struct AddScriptureToMemorizeView: View {
                         .font(.title)
                         .textInputAutocapitalization(.words)
                         .disableAutocorrection(true)
-                        .background(Color.appGray)
+                        .background(Color.appWhite)
                         .cornerRadius(8)
                         .padding(.top, 24)
 
@@ -44,12 +44,12 @@ struct AddScriptureToMemorizeView: View {
 
                     TextField("Scripture Passage", text: $scripture)
                         .font(.headline)
-                        .background(Color.appGray)
+                        .background(Color.appWhite)
                         .cornerRadius(8)
                         .padding(.bottom, 8)
 
                     ZStack {
-                        Color.appGray
+                        Color.appWhite
                         TextEditor(text: $notes)
                             .font(.body)
                             .scrollContentBackground(.hidden)
@@ -62,8 +62,8 @@ struct AddScriptureToMemorizeView: View {
                 .padding(.horizontal)
                 Spacer()
             }
-            .background(Color.appGray)
-            .navigationTitle(entryToEdit == nil ? "Add Scripture" : "Edit Entry")
+            .background(Color.appWhite)
+            .navigationTitle(entryToEdit == nil ? "Add Scripture to Memorize" : "Edit Entry")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
                 leading: Button("Cancel") {

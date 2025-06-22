@@ -17,9 +17,9 @@ struct CardSectionView: View {
         switch section {
         case .personalTime: return Color.appGreen
         case .scriptureToMemorize: return Color.appGreen
-        case .groupNotes: return Color.appCoral
-        case .sermonNotes: return Color.appCoral
-        case .prayerJournal: return Color.appCoral
+        case .groupNotes: return Color.appBrown
+        case .sermonNotes: return Color.appBlue
+        case .prayerJournal: return Color.appTanLight
         case .other: return Color.appCoral
         }
     }
@@ -35,11 +35,28 @@ struct CardSectionView: View {
                     .fixedSize(horizontal: false, vertical: true)
                 if let entry = entries.first {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(entry.title)
-                            .font(.body)
-                            .foregroundColor(.appWhite)
-                            .lineLimit(2)
-                            .truncationMode(.tail)
+                        if section == .personalTime {
+                            // Show scripture passages instead of title
+                            if let scripture = entry.scripture, !scripture.isEmpty {
+                                ForEach(scripture.components(separatedBy: ";").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }, id: \.self) { passage in
+                                    Text(passage)
+                                        .font(.body)
+                                        .foregroundColor(.appWhite)
+                                        .lineLimit(2)
+                                        .truncationMode(.tail)
+                                }
+                            } else {
+                                Text("No scripture passage")
+                                    .font(.body)
+                                    .foregroundColor(.appWhite)
+                            }
+                        } else {
+                            Text(entry.title)
+                                .font(.body)
+                                .foregroundColor(.appWhite)
+                                .lineLimit(2)
+                                .truncationMode(.tail)
+                        }
                         Text(formattedDate(entry.date))
                             .font(.caption)
                             .foregroundColor(.appWhite)
@@ -69,19 +86,19 @@ struct CardSectionView_Previews: PreviewProvider {
     static var previews: some View {
         VStack(spacing: 12) {
             CardSectionView(
-                section: .scriptureToMemorize,
+                section: .personalTime,
                 entries: [
-                    JournalEntry(section: JournalSection.scriptureToMemorize.rawValue, title: "A Very Long Entry Title That Should Truncate If Too Long", date: Date(), bodyText: "Body", scripture: nil, notes: nil, speaker: nil)
+                    JournalEntry(section: JournalSection.personalTime.rawValue, title: "", date: Date(), bodyText: nil, scripture: "John 3:16; Psalm 23:1", notes: nil, speaker: nil)
                 ],
-                prominent: false,
+                prominent: true,
                 onTap: {}
             )
             CardSectionView(
-                section: .personalTime,
+                section: .sermonNotes,
                 entries: [
-                    JournalEntry(section: JournalSection.personalTime.rawValue, title: "Morning Devotion", date: Date(), bodyText: "Body", scripture: nil, notes: nil, speaker: nil)
+                    JournalEntry(section: JournalSection.sermonNotes.rawValue, title: "Sunday Sermon", date: Date(), bodyText: nil, scripture: nil, notes: nil, speaker: nil)
                 ],
-                prominent: true,
+                prominent: false,
                 onTap: {}
             )
         }

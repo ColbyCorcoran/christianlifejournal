@@ -30,7 +30,7 @@ struct AddEntryView: View {
                         .font(.title)
                         .textInputAutocapitalization(.words)
                         .disableAutocorrection(true)
-                        .background(Color.appGray)
+                        .background(Color.appWhite)
                         .cornerRadius(8)
                         .padding(.top, 24)
 
@@ -40,7 +40,7 @@ struct AddEntryView: View {
                         .padding(.bottom, 8)
 
                     ZStack {
-                        Color.appGray
+                        Color.appWhite
                         TextEditor(text: $bodyText)
                             .font(.body)
                             .scrollContentBackground(.hidden)
@@ -53,7 +53,7 @@ struct AddEntryView: View {
                 .padding(.horizontal)
                 Spacer()
             }
-            .background(Color.appGray)
+            .background(Color.appWhite)
             .navigationTitle(entryToEdit == nil ? "Add \(section.rawValue) Entry" : "Edit Entry")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(

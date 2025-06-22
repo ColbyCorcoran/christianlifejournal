@@ -66,6 +66,7 @@ struct JournalEntryDetailView: View {
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .background(Color.appWhite.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("") // Hide nav bar title
         .toolbar {

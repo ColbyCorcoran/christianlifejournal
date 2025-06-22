@@ -10,14 +10,22 @@ import SwiftData
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.date, order: .reverse) private var allEntries: [JournalEntry]
-    @State private var showQuickAdd = false
-    @State private var showAddEntrySheet = false
     @State private var addEntrySection: JournalSection?
     @State private var path: [JournalSection] = []
 
     private let columns = [
         GridItem(.flexible(), spacing: 16),
         GridItem(.flexible(), spacing: 16)
+    ]
+
+    // Custom order for menu and dashboard
+    private let menuSections: [JournalSection] = [
+        .other,
+        .groupNotes,
+        .sermonNotes,
+        .prayerJournal,
+        .scriptureToMemorize,
+        .personalTime
     ]
 
     private func entries(for section: JournalSection) -> [JournalEntry] {
@@ -55,8 +63,16 @@ struct DashboardView: View {
                     .padding(.bottom, 80)
                 }
                 .background(Color.appWhite.ignoresSafeArea())
-                // Floating Quick Add Button
-                Button(action: { showQuickAdd = true }) {
+                // Floating Quick Add Button as a Menu
+                Menu {
+                    ForEach(menuSections, id: \.self) { section in
+                        Button {
+                            addEntrySection = section
+                        } label: {
+                            Text(section.rawValue)
+                        }
+                    }
+                } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 32, weight: .bold))
                         .foregroundColor(.appWhite)
@@ -67,22 +83,9 @@ struct DashboardView: View {
                 .padding(.trailing, 24)
                 .padding(.bottom, 32)
                 .accessibilityLabel("Quick Add Entry")
-                .sheet(isPresented: $showQuickAdd) {
-                    QuickAddMenu(
-                        onSelect: { section in
-                            showQuickAdd = false
-                            addEntrySection = section
-                            showAddEntrySheet = true
-                        },
-                        onCancel: { showQuickAdd = false }
-                    )
-                    .presentationDetents([.fraction(0.32)])
-                }
             }
-            .sheet(isPresented: $showAddEntrySheet) {
-                if let section = addEntrySection {
-                    addEntrySheetView(for: section)
-                }
+            .sheet(item: $addEntrySection) { section in
+                addEntrySheetView(for: section)
             }
             .tint(Color.appBlue)
             .navigationTitle("Christian Life Journal")
