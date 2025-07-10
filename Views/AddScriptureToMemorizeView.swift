@@ -90,7 +90,7 @@ struct AddScriptureToMemorizeView: View {
                 .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
             )
         }
-        .tint(Color.appBlue)
+        .tint(Color.appGreenDark)
     }
 }
 

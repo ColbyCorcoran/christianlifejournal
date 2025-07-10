@@ -13,59 +13,52 @@ struct DashboardView: View {
     @State private var addEntrySection: JournalSection?
     @State private var path: [JournalSection] = []
 
-    private let columns = [
-        GridItem(.flexible(), spacing: 16),
-        GridItem(.flexible(), spacing: 16)
-    ]
-
-    // Custom order for menu and dashboard
     private let menuSections: [JournalSection] = [
-        .other,
-        .groupNotes,
-        .sermonNotes,
-        .prayerJournal,
+        .personalTime,
         .scriptureToMemorize,
-        .personalTime
+        .prayerJournal,
+        .sermonNotes,
+        .groupNotes,
+        .other
     ]
-
-    private func entries(for section: JournalSection) -> [JournalEntry] {
-        allEntries.filter { $0.section == section.rawValue }
-    }
 
     var body: some View {
         NavigationStack(path: $path) {
             ZStack(alignment: .bottomTrailing) {
-                ScrollView {
-                    VStack(spacing: 20) {
-                        CardSectionView(
-                            section: .personalTime,
-                            entries: entries(for: .personalTime),
-                            prominent: true
-                        ) { path.append(.personalTime) }
-                        CardSectionView(
-                            section: .scriptureToMemorize,
-                            entries: entries(for: .scriptureToMemorize),
-                            prominent: true
-                        ) { path.append(.scriptureToMemorize) }
-                        LazyVGrid(columns: columns, spacing: 16) {
-                            ForEach([JournalSection.prayerJournal, .sermonNotes, .groupNotes, .other], id: \.self) { section in
-                                CardSectionView(
-                                    section: section,
-                                    entries: entries(for: section),
-                                    prominent: false
-                                ) { path.append(section) }
-                                .frame(height: 140)
-                            }
+                GeometryReader { geometry in
+                    let topPadding: CGFloat = 32
+                    let bottomPadding: CGFloat = 80
+                    let buttonHeight: CGFloat = 64 + 32 // button size + bottom padding
+                    let cardSpacing: CGFloat = 14
+                    let cardCount = CGFloat(menuSections.count)
+                    let totalSpacing = cardSpacing * (cardCount - 1)
+                    let availableHeight = geometry.size.height - topPadding - bottomPadding - buttonHeight
+                    let cardHeight = max((availableHeight - totalSpacing) / cardCount, 44)
+
+                    VStack(spacing: cardSpacing) {
+                        ForEach(menuSections, id: \.self) { section in
+                            CardSectionView(
+                                section: section,
+                                prominent: true
+                            ) { path.append(section) }
+                            .frame(height: cardHeight)
                         }
+                        Spacer(minLength: 0)
                     }
-                    .padding(.top, 32)
+                    .frame(
+                        maxWidth: .infinity,
+                        minHeight: geometry.size.height - buttonHeight,
+                        maxHeight: .infinity,
+                        alignment: .top
+                    )
+                    .padding(.top, topPadding)
                     .padding(.horizontal, 20)
-                    .padding(.bottom, 80)
+                    .padding(.bottom, bottomPadding)
+                    .background(Color.appWhite.ignoresSafeArea())
                 }
-                .background(Color.appWhite.ignoresSafeArea())
                 // Floating Quick Add Button as a Menu
                 Menu {
-                    ForEach(menuSections, id: \.self) { section in
+                    ForEach(menuSections.reversed(), id: \.self) { section in
                         Button {
                             addEntrySection = section
                         } label: {
@@ -75,9 +68,9 @@ struct DashboardView: View {
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.appWhite)
+                        .foregroundColor(.white)
                         .frame(width: 64, height: 64)
-                        .background(Circle().fill(Color.appBlue))
+                        .background(Circle().fill(Color.appGreenDark))
                         .shadow(radius: 6)
                 }
                 .padding(.trailing, 24)
@@ -87,14 +80,14 @@ struct DashboardView: View {
             .sheet(item: $addEntrySection) { section in
                 addEntrySheetView(for: section)
             }
-            .tint(Color.appBlue)
+            .tint(Color.appGreenDark)
             .navigationTitle("Christian Life Journal")
             .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: JournalSection.self) { section in
                 SectionListView(section: section)
             }
         }
-        .tint(Color.appBlue)
+        .tint(Color.appGreenDark)
     }
 
     @ViewBuilder

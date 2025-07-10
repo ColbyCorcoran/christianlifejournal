@@ -38,6 +38,10 @@ struct AddEntryView: View {
                         .font(.subheadline)
                         .foregroundColor(.gray)
                         .padding(.bottom, 8)
+                    
+                    Divider()
+                        .background(Color.appGreenDark)
+                        .padding(.vertical, 5)
 
                     ZStack {
                         Color.appWhite
@@ -79,7 +83,7 @@ struct AddEntryView: View {
                 .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
             )
         }
-        .tint(Color.appBlue)
+        .tint(Color.appGreenDark)
     }
 }
 

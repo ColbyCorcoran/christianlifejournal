@@ -19,7 +19,6 @@ struct AddPersonalTimeView: View {
 
     init(entryToEdit: JournalEntry? = nil) {
         self.entryToEdit = entryToEdit
-        // If you already store as [String], use that; otherwise, split on ";"
         let passages: [String]
         if let entryToEdit, let stored = entryToEdit.scripture, !stored.isEmpty {
             passages = stored.components(separatedBy: ";").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
@@ -33,60 +32,57 @@ struct AddPersonalTimeView: View {
 
     var body: some View {
         NavigationView {
-            VStack(alignment: .leading, spacing: 0) {
+            VStack(spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(formattedDate(date))
-                        .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .font(.headline.bold())
+                        .foregroundColor(.appGreenDark)
                         .padding(.top, 24)
                         .padding(.bottom, 8)
 
-                    // Scripture Passages
-                    ForEach(scripturePassages.indices, id: \.self) { idx in
-                        HStack(alignment: .center, spacing: 8) {
-                            TextField("Scripture Passage", text: $scripturePassages[idx])
-                                .font(.headline)
-                                .background(Color.appWhite)
-                                .cornerRadius(8)
-                                .focused($focusedPassageIndex, equals: idx)
-                                .onChange(of: scripturePassages[idx]) {
-                                    let newValue = scripturePassages[idx]
-                                    // Remove empty trailing fields except the last
-                                    if idx < scripturePassages.count - 1 && newValue.isEmpty {
-                                        scripturePassages.remove(at: idx)
-                                    }
-                                }
-                            // Show "+" button only for the last, non-empty, focused field
-                            if idx == scripturePassages.count - 1 &&
-                                !scripturePassages[idx].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
-                                focusedPassageIndex == idx {
-                                Button(action: {
-                                    scripturePassages.append("")
-                                    focusedPassageIndex = scripturePassages.count - 1
-                                }) {
-                                    Image(systemName: "plus.circle.fill")
-                                        .foregroundColor(.appBlue)
-                                        .font(.title2)
-                                }
-                                .buttonStyle(PlainButtonStyle())
-                                .transition(.scale)
-                            }
-                        }
-                        .padding(.bottom, 8)
-                    }
+                    ScripturePassagesInput(
+                        scripturePassages: $scripturePassages,
+                        focusedPassageIndex: $focusedPassageIndex
+                    )
 
-                    ZStack {
-                        Color.appWhite
-                        TextEditor(text: $notes)
-                            .font(.body)
-                            .padding(4)
-                            .scrollContentBackground(.hidden)
-                    }
-                    .cornerRadius(8)
-                    .frame(maxHeight: .infinity)
+                    Divider()
+                        .background(Color.appGreenDark)
+                        .padding(.vertical, 8)
                 }
                 .padding(.horizontal)
-                Spacer()
+
+                ZStack {
+                    Color.appWhite
+                    TextEditor(text: $notes)
+                        .font(.body)
+                        .padding(4)
+                        .scrollContentBackground(.hidden)
+                }
+                .cornerRadius(8)
+                .padding(.horizontal)
+                .padding(.bottom, 12)
+                .frame(maxHeight: .infinity)
+
+                VStack(alignment: .center, spacing: 12) {
+                    Text("What do these Scriptures say about God?")
+                        .font(.body.bold())
+                        .foregroundColor(.appWhite)
+                    Text("What do these Scriptures say about man?")
+                        .font(.body.bold())
+                        .foregroundColor(.appWhite)
+                    Text("How is God asking me to obey?")
+                        .font(.body.bold())
+                        .foregroundColor(.appWhite)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.appGreenDark)
+                        .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 16)
             }
             .background(Color.appWhite)
             .navigationTitle(entryToEdit == nil ? "Add Personal Time" : "Edit Entry")
@@ -99,16 +95,16 @@ struct AddPersonalTimeView: View {
                     let passages = scripturePassages
                         .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
                         .filter { !$0.isEmpty }
-                    let passagesString = passages.joined(separator: "; ") // For now, store as a single string
+                    let passagesString = passages.joined(separator: "; ")
                     if let entryToEdit = entryToEdit {
-                        entryToEdit.title = "" // Not used for Personal Time
+                        entryToEdit.title = ""
                         entryToEdit.scripture = passagesString
                         entryToEdit.notes = notes
                         try? modelContext.save()
                     } else {
                         let newEntry = JournalEntry(
                             section: JournalSection.personalTime.rawValue,
-                            title: "", // Not used for Personal Time
+                            title: "",
                             date: date,
                             scripture: passagesString,
                             notes: notes
@@ -120,9 +116,50 @@ struct AddPersonalTimeView: View {
                 .disabled(scripturePassages.allSatisfy { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty })
             )
         }
-        .tint(Color.appBlue)
+        .tint(Color.appGreenDark)
     }
 }
+
+// MARK: - Helper View for Scripture Passages Input
+
+struct ScripturePassagesInput: View {
+    @Binding var scripturePassages: [String]
+    @FocusState.Binding var focusedPassageIndex: Int?
+
+    var body: some View {
+        ForEach(scripturePassages.indices, id: \.self) { idx in
+            HStack(alignment: .center, spacing: 8) {
+                TextField("Scripture Passage", text: $scripturePassages[idx])
+                    .font(.headline)
+                    .background(Color.appWhite)
+                    .cornerRadius(8)
+                    .focused($focusedPassageIndex, equals: idx)
+                    .onChange(of: scripturePassages[idx]) {
+                        let newValue = scripturePassages[idx]
+                        if idx < scripturePassages.count - 1 && newValue.isEmpty {
+                            scripturePassages.remove(at: idx)
+                        }
+                    }
+                if idx == scripturePassages.count - 1 &&
+                    !scripturePassages[idx].trimmingCharacters(in: .whitespacesAndNewlines).isEmpty &&
+                    focusedPassageIndex == idx {
+                    Button(action: {
+                        scripturePassages.append("")
+                        focusedPassageIndex = scripturePassages.count - 1
+                    }) {
+                        Image(systemName: "plus.circle.fill")
+                            .foregroundColor(.appGreenDark)
+                            .font(.title2)
+                    }
+                    .buttonStyle(PlainButtonStyle())
+                    .transition(.scale)
+                }
+            }
+            .padding(.bottom, 8)
+        }
+    }
+}
+
 
 struct AddPersonalTimeView_Previews: PreviewProvider {
     static var previews: some View {

@@ -8,15 +8,14 @@
 import SwiftUI
 
 extension Color {
-    static let appTan = Color(hex: "#d8bfa0")
-    static let appTanLight = Color(hex: "#e1c7a6")
-    static let appGray = Color(hex: "#c6c4c0")
-    static let appGreen = Color(hex: "#546654")
-    static let appBrown = Color(hex: "#7c5e3c")
-    static let appWhite = Color(hex: "#f8f5f0")
-    static let appBlue = Color(hex: "#7a8fa6")
-    static let appCoral = Color(hex: "#e6a692")
-    
+    static let appGreenDark   = Color(hex: "#546654")
+    static let appGreen       = Color(hex: "#6a7c6a")
+    static let appGreenMedium = Color(hex: "#7e997e")
+    static let appGreenMid    = Color(hex: "#9dbb9d")
+    static let appGreenLight  = Color(hex: "#b7cbb7")
+    static let appGreenPale   = Color(hex: "#dbe8db")
+    static let appWhite       = Color(hex: "#f8f5f0")
+
     init(hex: String) {
         let hex = hex.trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
         var int: UInt64 = 0
@@ -26,7 +25,7 @@ extension Color {
         case 3: (a, r, g, b) = (255, (int >> 8) * 17, (int >> 4 & 0xF) * 17, (int & 0xF) * 17)
         case 6: (a, r, g, b) = (255, int >> 16, int >> 8 & 0xFF, int & 0xFF)
         case 8: (a, r, g, b) = (int >> 24, int >> 16 & 0xFF, int >> 8 & 0xFF, int & 0xFF)
-        default: (a, r, g, b) = (255, 216, 191, 160)
+        default: (a, r, g, b) = (255, 84, 102, 84)
         }
         self.init(
             .sRGB,

@@ -47,6 +47,10 @@ struct AddSermonNotesView: View {
                         .background(Color.appWhite)
                         .cornerRadius(8)
                         .padding(.bottom, 8)
+                    
+                    Divider()
+                        .background(Color.appGreenDark)
+                        .padding(.vertical, 5)
 
                     ZStack {
                         Color.appWhite
@@ -89,7 +93,7 @@ struct AddSermonNotesView: View {
                 .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
             )
         }
-        .tint(Color.appBlue)
+        .tint(Color.appGreenDark)
     }
 }
 

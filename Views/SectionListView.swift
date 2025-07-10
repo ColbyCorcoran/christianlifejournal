@@ -28,34 +28,20 @@ struct SectionListView: View {
 
             List {
                 ForEach(entries) { entry in
-                    NavigationLink(destination: JournalEntryDetailView(entry: entry)) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(entry.title)
-                                .font(.headline)
-                            Text(formattedDate(entry.date))
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            entryToDelete = entry
-                            showDeleteAlert = true
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                        Button {
+                    SectionListRow(
+                        entry: entry,
+                        onEdit: {
                             entryToEdit = entry
                             showEditSheet = true
-                        } label: {
-                            Label("Edit", systemImage: "pencil")
+                        },
+                        onDelete: {
+                            entryToDelete = entry
+                            showDeleteAlert = true
                         }
-                        .tint(Color.appBlue)
-                    }
+                    )
                 }
             }
-            .tint(Color.appBlue)
+            .tint(Color.appGreenDark)
             .navigationTitle(section.rawValue)
             .alert("Delete Entry?", isPresented: $showDeleteAlert, presenting: entryToDelete) { entry in
                 Button("Delete", role: .destructive) {
@@ -109,6 +95,36 @@ struct SectionListView: View {
             AddSermonNotesView(entryToEdit: entry)
         case .scriptureToMemorize:
             AddScriptureToMemorizeView(entryToEdit: entry)
+        }
+    }
+}
+
+// MARK: - Helper Row View
+
+struct SectionListRow: View {
+    let entry: JournalEntry
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        NavigationLink(destination: JournalEntryDetailView(entry: entry)) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(entry.title)
+                    .font(.headline)
+                Text(formattedDate(entry.date))
+                    .font(.caption)
+                    .foregroundColor(.gray)
+            }
+            .padding(.vertical, 4)
+        }
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive, action: onDelete) {
+                Label("Delete", systemImage: "trash")
+            }
+            Button(action: onEdit) {
+                Label("Edit", systemImage: "pencil")
+            }
+            .tint(Color.appGreenDark)
         }
     }
 }
