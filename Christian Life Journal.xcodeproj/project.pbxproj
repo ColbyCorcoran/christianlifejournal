@@ -19,6 +19,7 @@
 		B60C526E2E05E56800800EB8 /* CardSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C526D2E05E56800800EB8 /* CardSectionView.swift */; };
 		B60C52702E05FB7500800EB8 /* JournalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C526F2E05FB7500800EB8 /* JournalModels.swift */; };
 		B6693C542E0607B1002FD994 /* Color+AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6693C532E0607B1002FD994 /* Color+AppColors.swift */; };
+		B67127082E2186EE0097E590 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67127072E2186EE0097E590 /* SearchView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -54,6 +55,7 @@
 		B60C526D2E05E56800800EB8 /* CardSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSectionView.swift; sourceTree = "<group>"; };
 		B60C526F2E05FB7500800EB8 /* JournalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalModels.swift; sourceTree = "<group>"; };
 		B6693C532E0607B1002FD994 /* Color+AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+AppColors.swift"; sourceTree = "<group>"; };
+		B67127072E2186EE0097E590 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -138,6 +140,7 @@
 				B60C52672E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift */,
 				B60C52692E05DFD700800EB8 /* JournalEntryDetailView.swift */,
 				B60C526D2E05E56800800EB8 /* CardSectionView.swift */,
+				B67127072E2186EE0097E590 /* SearchView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -297,6 +300,7 @@
 				B60C52502E05BC3E00800EB8 /* JournalSection.swift in Sources */,
 				B60C525C2E05BD0C00800EB8 /* SectionListView.swift in Sources */,
 				B60C526E2E05E56800800EB8 /* CardSectionView.swift in Sources */,
+				B67127082E2186EE0097E590 /* SearchView.swift in Sources */,
 				B60C52662E05D0CA00800EB8 /* AddSermonNotesView.swift in Sources */,
 				B60C524E2E05BC0D00800EB8 /* DateUtils.swift in Sources */,
 				B6693C542E0607B1002FD994 /* Color+AppColors.swift in Sources */,

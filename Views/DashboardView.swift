@@ -12,6 +12,8 @@ struct DashboardView: View {
     @Query(sort: \JournalEntry.date, order: .reverse) private var allEntries: [JournalEntry]
     @State private var addEntrySection: JournalSection?
     @State private var path: [JournalSection] = []
+    @State private var showSearch = false
+    @State private var searchText = ""
 
     private let menuSections: [JournalSection] = [
         .personalTime,
@@ -24,65 +26,73 @@ struct DashboardView: View {
 
     var body: some View {
         NavigationStack(path: $path) {
-            ZStack(alignment: .bottomTrailing) {
-                GeometryReader { geometry in
-                    let topPadding: CGFloat = 32
-                    let bottomPadding: CGFloat = 80
-                    let buttonHeight: CGFloat = 64 + 32 // button size + bottom padding
-                    let cardSpacing: CGFloat = 14
-                    let cardCount = CGFloat(menuSections.count)
-                    let totalSpacing = cardSpacing * (cardCount - 1)
-                    let availableHeight = geometry.size.height - topPadding - bottomPadding - buttonHeight
-                    let cardHeight = max((availableHeight - totalSpacing) / cardCount, 44)
+            VStack(spacing: 0) {
+                VStack(spacing: 45) {
+                    ForEach(menuSections, id: \.self) { section in
+                        CardSectionView(
+                            section: section,
+                            prominent: true
+                        ) { path.append(section) }
+                        .frame(height: 56)
+                    }
+                }
+                .padding(.top, 32)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 0)
 
-                    VStack(spacing: cardSpacing) {
-                        ForEach(menuSections, id: \.self) { section in
-                            CardSectionView(
-                                section: section,
-                                prominent: true
-                            ) { path.append(section) }
-                            .frame(height: cardHeight)
+                Spacer(minLength: 0)
+
+                // Search bar and quick add button inline at the bottom
+                HStack(spacing: 12) {
+                    Button(action: {
+                        showSearch = true
+                    }) {
+                        HStack {
+                            Image(systemName: "magnifyingglass")
+                                .foregroundColor(.appGreenDark)
+                            Text("Search journal...")
+                                .foregroundColor(.appGreenDark.opacity(0.7))
+                                .font(.body)
+                            Spacer()
                         }
-                        Spacer(minLength: 0)
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 14)
+                                .fill(Color.appGreenPale)
+                        )
                     }
-                    .frame(
-                        maxWidth: .infinity,
-                        minHeight: geometry.size.height - buttonHeight,
-                        maxHeight: .infinity,
-                        alignment: .top
-                    )
-                    .padding(.top, topPadding)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, bottomPadding)
-                    .background(Color.appWhite.ignoresSafeArea())
-                }
-                // Floating Quick Add Button as a Menu
-                Menu {
-                    ForEach(menuSections.reversed(), id: \.self) { section in
-                        Button {
-                            addEntrySection = section
-                        } label: {
-                            Text(section.rawValue)
+                    .buttonStyle(PlainButtonStyle())
+
+                    Menu {
+                        ForEach(menuSections.reversed(), id: \.self) { section in
+                            Button {
+                                addEntrySection = section
+                            } label: {
+                                Text(section.rawValue)
+                            }
                         }
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 20, weight: .bold))
+                            .foregroundColor(.white)
+                            .frame(width: 40, height: 40)
+                            .background(Circle().fill(Color.appGreenDark))
+                            .shadow(radius: 3)
                     }
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 32, weight: .bold))
-                        .foregroundColor(.white)
-                        .frame(width: 64, height: 64)
-                        .background(Circle().fill(Color.appGreenDark))
-                        .shadow(radius: 6)
+                    .accessibilityLabel("Quick Add Entry")
                 }
-                .padding(.trailing, 24)
+                .padding(.horizontal, 20)
                 .padding(.bottom, 32)
-                .accessibilityLabel("Quick Add Entry")
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .background(Color.appWhite.ignoresSafeArea())
             .sheet(item: $addEntrySection) { section in
                 addEntrySheetView(for: section)
             }
+            .fullScreenCover(isPresented: $showSearch) {
+                SearchView(searchText: $searchText, allEntries: allEntries, showSearch: $showSearch)
+            }
             .tint(Color.appGreenDark)
-            .navigationTitle("Christian Life Journal")
-            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(for: JournalSection.self) { section in
                 SectionListView(section: section)
             }
