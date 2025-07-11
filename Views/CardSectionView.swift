@@ -25,7 +25,7 @@ struct CardSectionView: View {
     }
 
     // All cards are the same height, skinnier than before
-    private var cardHeight: CGFloat { 72 }
+    private var cardHeight: CGFloat { 70 }
 
     var body: some View {
         Button(action: onTap) {
