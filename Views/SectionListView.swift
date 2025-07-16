@@ -12,7 +12,7 @@ struct SectionListView: View {
     let section: JournalSection
     @Query(sort: \JournalEntry.date, order: .reverse) private var allEntries: [JournalEntry]
 
-    @State private var showAdd = false
+    @State private var addEntry: JournalEntry?
     @State private var showEditSheet = false
     @State private var entryToEdit: JournalEntry?
     @State private var showDeleteAlert = false
@@ -24,24 +24,38 @@ struct SectionListView: View {
 
     var body: some View {
         ZStack {
-            Color.appWhite.ignoresSafeArea() // Custom background
+            Color.appWhite.ignoresSafeArea()
 
             List {
                 ForEach(entries) { entry in
-                    SectionListRow(
-                        entry: entry,
-                        onEdit: {
-                            entryToEdit = entry
-                            showEditSheet = true
-                        },
-                        onDelete: {
+                    NavigationLink(destination: JournalEntryDetailView(entry: entry)) {
+                        VStack(alignment: .leading, spacing: 4) {
+                            Text(entry.title)
+                                .font(.headline)
+                            Text(formattedDate(entry.date))
+                                .font(.caption)
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .swipeActions(edge: .trailing) {
+                        Button(role: .destructive) {
                             entryToDelete = entry
                             showDeleteAlert = true
+                        } label: {
+                            Label("Delete", systemImage: "trash")
                         }
-                    )
+                        Button {
+                            entryToEdit = entry
+                            showEditSheet = true
+                        } label: {
+                            Label("Edit", systemImage: "pencil")
+                        }
+                        .tint(Color.appBlue)
+                    }
                 }
             }
-            .tint(Color.appGreenDark)
+            .tint(Color.appBlue)
             .navigationTitle(section.rawValue)
             .alert("Delete Entry?", isPresented: $showDeleteAlert, presenting: entryToDelete) { entry in
                 Button("Delete", role: .destructive) {
@@ -51,15 +65,27 @@ struct SectionListView: View {
             } message: { entry in
                 Text("Are you sure you want to delete \"\(entry.title)\"?")
             }
-            .sheet(isPresented: $showAdd) {
-                addEntrySheetView(for: section)
+            .sheet(item: $addEntry) { entry in
+                addEntrySheetView(for: entry)
             }
             .sheet(isPresented: $showEditSheet) {
-                editEntrySheetView(for: section, entry: entryToEdit)
+                if let entry = entryToEdit {
+                    addEntrySheetView(for: entry)
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showAdd = true }) {
+                    Button(action: {
+                        let newEntry = JournalEntry(
+                            section: section.rawValue,
+                            title: "",
+                            date: Date(),
+                            scripture: "",
+                            notes: ""
+                        )
+                        modelContext.insert(newEntry)
+                        addEntry = newEntry
+                    }) {
                         Image(systemName: "plus")
                     }
                 }
@@ -68,63 +94,15 @@ struct SectionListView: View {
         }
     }
 
-    // MARK: - Add/Edit Entry Sheet Helpers
-
     @ViewBuilder
-    private func addEntrySheetView(for section: JournalSection) -> some View {
-        switch section {
-        case .prayerJournal, .groupNotes, .other:
-            AddEntryView(section: section)
-        case .personalTime:
-            AddPersonalTimeView()
-        case .sermonNotes:
-            AddSermonNotesView()
-        case .scriptureToMemorize:
-            AddScriptureToMemorizeView()
-        }
-    }
-
-    @ViewBuilder
-    private func editEntrySheetView(for section: JournalSection, entry: JournalEntry?) -> some View {
-        switch section {
-        case .prayerJournal, .groupNotes, .other:
-            AddEntryView(section: section, entryToEdit: entry)
+    private func addEntrySheetView(for entry: JournalEntry) -> some View {
+        switch JournalSection(rawValue: entry.section) {
         case .personalTime:
             AddPersonalTimeView(entryToEdit: entry)
         case .sermonNotes:
             AddSermonNotesView(entryToEdit: entry)
-        case .scriptureToMemorize:
-            AddScriptureToMemorizeView(entryToEdit: entry)
-        }
-    }
-}
-
-// MARK: - Helper Row View
-
-struct SectionListRow: View {
-    let entry: JournalEntry
-    let onEdit: () -> Void
-    let onDelete: () -> Void
-
-    var body: some View {
-        NavigationLink(destination: JournalEntryDetailView(entry: entry)) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(entry.title)
-                    .font(.headline)
-                Text(formattedDate(entry.date))
-                    .font(.caption)
-                    .foregroundColor(.gray)
-            }
-            .padding(.vertical, 4)
-        }
-        .swipeActions(edge: .trailing) {
-            Button(role: .destructive, action: onDelete) {
-                Label("Delete", systemImage: "trash")
-            }
-            Button(action: onEdit) {
-                Label("Edit", systemImage: "pencil")
-            }
-            .tint(Color.appGreenDark)
+        case .scriptureToMemorize, .prayerJournal, .groupNotes, .other, .none:
+            AddEntryView(entryToEdit: entry)
         }
     }
 }

@@ -21,8 +21,9 @@
 		B6693C542E0607B1002FD994 /* Color+AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6693C532E0607B1002FD994 /* Color+AppColors.swift */; };
 		B67127082E2186EE0097E590 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67127072E2186EE0097E590 /* SearchView.swift */; };
 		B671270E2E21E4C00097E590 /* BibleBooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = B671270D2E21E4C00097E590 /* BibleBooks.swift */; };
-		B67127102E21EDC70097E590 /* ScriptureReference.swift in Sources */ = {isa = PBXBuildFile; fileRef = B671270F2E21EDC70097E590 /* ScriptureReference.swift */; };
-		B67127122E21EDE90097E590 /* ScripturePassageField.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67127112E21EDE90097E590 /* ScripturePassageField.swift */; };
+		B675A6CF2E273CC600B5906D /* ScripturePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B675A6CE2E273CC600B5906D /* ScripturePickerView.swift */; };
+		B675A6D12E27423200B5906D /* ScripturePassageSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */; };
+		B675A6D32E274ED000B5906D /* PassageRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B675A6D22E274ED000B5906D /* PassageRow.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,8 +61,9 @@
 		B6693C532E0607B1002FD994 /* Color+AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+AppColors.swift"; sourceTree = "<group>"; };
 		B67127072E2186EE0097E590 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		B671270D2E21E4C00097E590 /* BibleBooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleBooks.swift; sourceTree = "<group>"; };
-		B671270F2E21EDC70097E590 /* ScriptureReference.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptureReference.swift; sourceTree = "<group>"; };
-		B67127112E21EDE90097E590 /* ScripturePassageField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScripturePassageField.swift; sourceTree = "<group>"; };
+		B675A6CE2E273CC600B5906D /* ScripturePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScripturePickerView.swift; sourceTree = "<group>"; };
+		B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScripturePassageSelector.swift; sourceTree = "<group>"; };
+		B675A6D22E274ED000B5906D /* PassageRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassageRow.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -125,7 +127,6 @@
 				B60C524F2E05BC3E00800EB8 /* JournalSection.swift */,
 				B60C526F2E05FB7500800EB8 /* JournalModels.swift */,
 				B671270D2E21E4C00097E590 /* BibleBooks.swift */,
-				B671270F2E21EDC70097E590 /* ScriptureReference.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -149,7 +150,9 @@
 				B60C52692E05DFD700800EB8 /* JournalEntryDetailView.swift */,
 				B60C526D2E05E56800800EB8 /* CardSectionView.swift */,
 				B67127072E2186EE0097E590 /* SearchView.swift */,
-				B67127112E21EDE90097E590 /* ScripturePassageField.swift */,
+				B675A6CE2E273CC600B5906D /* ScripturePickerView.swift */,
+				B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */,
+				B675A6D22E274ED000B5906D /* PassageRow.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -304,17 +307,18 @@
 				B60C52562E05BC7B00800EB8 /* DashboardView.swift in Sources */,
 				B60C52642E05D0C000800EB8 /* AddPersonalTimeView.swift in Sources */,
 				B60C525E2E05BD1700800EB8 /* AddEntryView.swift in Sources */,
+				B675A6CF2E273CC600B5906D /* ScripturePickerView.swift in Sources */,
 				B60C526A2E05DFD700800EB8 /* JournalEntryDetailView.swift in Sources */,
 				B60C52682E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift in Sources */,
 				B671270E2E21E4C00097E590 /* BibleBooks.swift in Sources */,
 				B60C52502E05BC3E00800EB8 /* JournalSection.swift in Sources */,
 				B60C525C2E05BD0C00800EB8 /* SectionListView.swift in Sources */,
-				B67127102E21EDC70097E590 /* ScriptureReference.swift in Sources */,
-				B67127122E21EDE90097E590 /* ScripturePassageField.swift in Sources */,
 				B60C526E2E05E56800800EB8 /* CardSectionView.swift in Sources */,
 				B67127082E2186EE0097E590 /* SearchView.swift in Sources */,
+				B675A6D32E274ED000B5906D /* PassageRow.swift in Sources */,
 				B60C52662E05D0CA00800EB8 /* AddSermonNotesView.swift in Sources */,
 				B60C524E2E05BC0D00800EB8 /* DateUtils.swift in Sources */,
+				B675A6D12E27423200B5906D /* ScripturePassageSelector.swift in Sources */,
 				B6693C542E0607B1002FD994 /* Color+AppColors.swift in Sources */,
 				B60C52702E05FB7500800EB8 /* JournalModels.swift in Sources */,
 			);

@@ -11,25 +11,39 @@ import SwiftData
 struct AddPersonalTimeView: View {
     @Environment(\.modelContext) private var modelContext
     var entryToEdit: JournalEntry? = nil
-    @Environment(\.presentationMode) var presentationMode
+    @Environment(\.dismiss) private var dismiss
 
-    @State private var passages: [String]
-    @State private var references: [ScriptureReference?]
-    @State private var notes: String
+    @State private var passages: [ScripturePassageSelection] = [ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1)]
+    @State private var notes: String = ""
+    @State private var isPickerPresented: Bool = false
+    @State private var pickerIndex: Int = 0
+    @State private var showLeaveAlert = false
     let date: Date
 
     init(entryToEdit: JournalEntry? = nil) {
         self.entryToEdit = entryToEdit
-        let storedPassages: [String]
+        var initialPassages: [ScripturePassageSelection]
         if let entryToEdit, let stored = entryToEdit.scripture, !stored.isEmpty {
-            storedPassages = stored.components(separatedBy: ";").map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+            initialPassages = stored.components(separatedBy: ";").compactMap { ref in
+                let regex = #"^([1-3]?\s?[A-Za-z ]+)\s+(\d+):(\d+)(?:-(\d+))?$"#
+                guard let match = ref.range(of: regex, options: .regularExpression) else { return nil }
+                let comps = String(ref[match]).components(separatedBy: .whitespaces)
+                let book = comps.dropLast().joined(separator: " ")
+                let last = comps.last ?? ""
+                let chapterVerse = last.components(separatedBy: ":")
+                guard let chapter = Int(chapterVerse[0]) else { return nil }
+                let verseRange = chapterVerse.count > 1 ? chapterVerse[1].split(separator: "-").compactMap { Int($0) } : []
+                let verse = verseRange.first ?? 1
+                let verseEnd = verseRange.count > 1 ? verseRange.last! : verse
+                let bookIndex = bibleBooks.firstIndex(where: { $0.name == book }) ?? 0
+                return ScripturePassageSelection(bookIndex: bookIndex, chapter: chapter, verse: verse, verseEnd: verseEnd)
+            }
         } else {
-            storedPassages = [""]
+            initialPassages = [ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1)]
         }
-        _passages = State(initialValue: storedPassages)
+        _passages = State(initialValue: initialPassages)
         _notes = State(initialValue: entryToEdit?.notes ?? "")
         self.date = entryToEdit?.date ?? Date()
-        _references = State(initialValue: storedPassages.map { parseScriptureReference($0, bibleBooks: bibleBooks) })
     }
 
     var body: some View {
@@ -40,16 +54,19 @@ struct AddPersonalTimeView: View {
                 reflectionBox
             }
             .background(Color.appWhite)
-            .navigationTitle(entryToEdit == nil ? "Add Personal Time Entry" : "Edit Entry")
+            .navigationTitle(entryToEdit == nil ? "Add Personal Time" : "Edit Entry")
             .navigationBarItems(
                 leading: Button("Cancel") {
-                    presentationMode.wrappedValue.dismiss()
+                    if hasUnsavedChanges {
+                        showLeaveAlert = true
+                    } else {
+                        dismiss()
+                    }
                 },
                 trailing: Button(entryToEdit == nil ? "Add" : "Save") {
-                    let validPassages = passages
-                        .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    let passagesString = passages.map { $0.displayString(bibleBooks: bibleBooks) ?? "" }
                         .filter { !$0.isEmpty }
-                    let passagesString = validPassages.joined(separator: "; ")
+                        .joined(separator: "; ")
                     if let entryToEdit = entryToEdit {
                         entryToEdit.title = ""
                         entryToEdit.scripture = passagesString
@@ -65,16 +82,31 @@ struct AddPersonalTimeView: View {
                         )
                         modelContext.insert(newEntry)
                     }
-                    presentationMode.wrappedValue.dismiss()
+                    dismiss()
                 }
-                .disabled(passages.allSatisfy { $0.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
-                          || references.contains(where: { $0?.isValid == false }))
+                .disabled(passages.allSatisfy { $0.displayString(bibleBooks: bibleBooks)?.isEmpty ?? true })
             )
+            .alert("Unsaved Changes", isPresented: $showLeaveAlert) {
+                Button("Discard Changes", role: .destructive) {
+                    dismiss()
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("You have unsaved changes. Are you sure you want to leave without saving?")
+            }
+            .sheet(isPresented: $isPickerPresented) {
+                ScripturePickerView(
+                    bibleBooks: bibleBooks,
+                    selectedBookIndex: $passages[pickerIndex].bookIndex,
+                    selectedChapter: $passages[pickerIndex].chapter,
+                    selectedVerse: $passages[pickerIndex].verse,
+                    selectedVerseEnd: $passages[pickerIndex].verseEnd
+                )
+                .presentationDetents([.fraction(0.35)])
+            }
         }
         .tint(Color.appGreenDark)
     }
-
-    // MARK: - Computed Properties
 
     private var passageList: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -86,13 +118,21 @@ struct AddPersonalTimeView: View {
 
             ForEach(passages.indices, id: \.self) { idx in
                 PassageRow(
-                    text: $passages[idx],
-                    reference: $references[idx],
+                    passage: $passages[idx],
                     isLast: idx == passages.count - 1,
                     onAdd: {
-                        passages.append("")
-                        references.append(nil)
-                    }
+                        passages.append(ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1))
+                        pickerIndex = passages.count - 1
+                        isPickerPresented = true
+                    },
+                    isPickerPresented: Binding(
+                        get: { isPickerPresented && pickerIndex == idx },
+                        set: { newValue in
+                            isPickerPresented = newValue
+                            if newValue { pickerIndex = idx }
+                        }
+                    ),
+                    bibleBooks: bibleBooks
                 )
                 .padding(.bottom, 8)
             }
@@ -111,6 +151,9 @@ struct AddPersonalTimeView: View {
                 .font(.body)
                 .padding(4)
                 .scrollContentBackground(.hidden)
+                .onTapGesture {
+                    isPickerPresented = false
+                }
         }
         .cornerRadius(8)
         .padding(.horizontal)
@@ -120,53 +163,30 @@ struct AddPersonalTimeView: View {
 
     private var reflectionBox: some View {
         VStack(alignment: .center, spacing: 12) {
-                            Text("What do these Scriptures say about God?")
-                                .font(.body.bold())
-                                .foregroundColor(.appWhite)
-                            Text("What do these Scriptures say about man?")
-                                .font(.body.bold())
-                                .foregroundColor(.appWhite)
-                            Text("How is God asking me to obey?")
-                                .font(.body.bold())
-                                .foregroundColor(.appWhite)
-                        }
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: 16)
-                                .fill(Color.appGreenDark)
-                                .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
-                        )
-                        .padding(.horizontal)
-                        .padding(.bottom, 16)
-    }
-}
-
-// MARK: - Helper Row View for Each Passage
-
-struct PassageRow: View {
-    @Binding var text: String
-    @Binding var reference: ScriptureReference?
-    var isLast: Bool
-    var onAdd: () -> Void
-
-    var body: some View {
-        HStack(alignment: .center, spacing: 8) {
-            ScripturePassageField(
-                text: $text,
-                reference: $reference,
-                bibleBooks: bibleBooks
-            )
-            if isLast && !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Button(action: onAdd) {
-                    Image(systemName: "plus.circle.fill")
-                        .foregroundColor(.appGreenDark)
-                        .font(.title2)
-                }
-                .buttonStyle(PlainButtonStyle())
-                .transition(.scale)
+                                    Text("What do these Scriptures say about God?")
+                                        .font(.body.bold())
+                                        .foregroundColor(.appWhite)
+                                    Text("What do these Scriptures say about man?")
+                                        .font(.body.bold())
+                                        .foregroundColor(.appWhite)
+                                    Text("How is God asking me to obey?")
+                                        .font(.body.bold())
+                                        .foregroundColor(.appWhite)
+                                }
+                                .padding()
+                                .frame(maxWidth: .infinity)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .fill(Color.appGreenDark)
+                                        .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
+                                )
+                                .padding(.horizontal)
+                                .padding(.bottom, 16)
             }
-        }
+
+    private var hasUnsavedChanges: Bool {
+        // Implement your own logic to compare current state to original entry
+        true // For demo purposes, always true
     }
 }
 

@@ -10,8 +10,8 @@ import SwiftData
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.date, order: .reverse) private var allEntries: [JournalEntry]
-    @State private var addEntrySection: JournalSection?
-    @State private var path: [JournalSection] = []
+    @State private var addEntry: JournalEntry?
+    @State private var path: [JournalEntry] = []
     @State private var showSearch = false
     @State private var searchText = ""
 
@@ -27,12 +27,15 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack(path: $path) {
             VStack(spacing: 0) {
-                VStack(spacing: 45) {
+                VStack(spacing: 8) {
                     ForEach(menuSections, id: \.self) { section in
                         CardSectionView(
                             section: section,
                             prominent: true
-                        ) { path.append(section) }
+                        ) {
+                            // Show section list view for this section
+                            path.append(JournalEntry(section: section.rawValue, title: "", date: Date(), scripture: "", notes: ""))
+                        }
                         .frame(height: 56)
                     }
                 }
@@ -66,7 +69,16 @@ struct DashboardView: View {
                     Menu {
                         ForEach(menuSections.reversed(), id: \.self) { section in
                             Button {
-                                addEntrySection = section
+                                // Create a new entry and present the add view
+                                let newEntry = JournalEntry(
+                                    section: section.rawValue,
+                                    title: "",
+                                    date: Date(),
+                                    scripture: "",
+                                    notes: ""
+                                )
+                                modelContext.insert(newEntry)
+                                addEntry = newEntry
                             } label: {
                                 Text(section.rawValue)
                             }
@@ -86,31 +98,29 @@ struct DashboardView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
             .background(Color.appWhite.ignoresSafeArea())
-            .sheet(item: $addEntrySection) { section in
-                addEntrySheetView(for: section)
+            .sheet(item: $addEntry) { entry in
+                addEntrySheetView(for: entry)
             }
             .fullScreenCover(isPresented: $showSearch) {
                 SearchView(searchText: $searchText, allEntries: allEntries, showSearch: $showSearch)
             }
             .tint(Color.appGreenDark)
-            .navigationDestination(for: JournalSection.self) { section in
-                SectionListView(section: section)
+            .navigationDestination(for: JournalEntry.self) { entry in
+                SectionListView(section: JournalSection(rawValue: entry.section) ?? .other)
             }
         }
         .tint(Color.appGreenDark)
     }
 
     @ViewBuilder
-    private func addEntrySheetView(for section: JournalSection) -> some View {
-        switch section {
-        case .prayerJournal, .groupNotes, .other:
-            AddEntryView(section: section)
+    private func addEntrySheetView(for entry: JournalEntry) -> some View {
+        switch JournalSection(rawValue: entry.section) {
         case .personalTime:
-            AddPersonalTimeView()
+            AddPersonalTimeView(entryToEdit: entry)
         case .sermonNotes:
-            AddSermonNotesView()
-        case .scriptureToMemorize:
-            AddScriptureToMemorizeView()
+            AddSermonNotesView(entryToEdit: entry)
+        case .scriptureToMemorize, .prayerJournal, .groupNotes, .other, .none:
+            AddEntryView(entryToEdit: entry)
         }
     }
 }
