@@ -28,34 +28,21 @@ struct SectionListView: View {
 
             List {
                 ForEach(entries) { entry in
-                    NavigationLink(destination: JournalEntryDetailView(entry: entry)) {
-                        VStack(alignment: .leading, spacing: 4) {
-                            Text(entry.title)
-                                .font(.headline)
-                            Text(formattedDate(entry.date))
-                                .font(.caption)
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .swipeActions(edge: .trailing) {
-                        Button(role: .destructive) {
-                            entryToDelete = entry
-                            showDeleteAlert = true
-                        } label: {
-                            Label("Delete", systemImage: "trash")
-                        }
-                        Button {
+                    SectionListRow(
+                        entry: entry,
+                        section: section,
+                        onEdit: {
                             entryToEdit = entry
                             showEditSheet = true
-                        } label: {
-                            Label("Edit", systemImage: "pencil")
+                        },
+                        onDelete: {
+                            entryToDelete = entry
+                            showDeleteAlert = true
                         }
-                        .tint(Color.appBlue)
-                    }
+                    )
                 }
             }
-            .tint(Color.appBlue)
+            .tint(Color.appGreenDark)
             .navigationTitle(section.rawValue)
             .alert("Delete Entry?", isPresented: $showDeleteAlert, presenting: entryToDelete) { entry in
                 Button("Delete", role: .destructive) {
@@ -106,6 +93,48 @@ struct SectionListView: View {
         }
     }
 }
+
+// MARK: - Helper Row View
+
+struct SectionListRow: View {
+    let entry: JournalEntry
+    let section: JournalSection
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+        NavigationLink(destination: JournalEntryDetailView(entry: entry)) {
+            VStack(alignment: .leading, spacing: 4) {
+                if section == .personalTime {
+                    // Date as main line, scripture as secondary
+                    Text(formattedDate(entry.date))
+                        .font(.headline)
+                    Text(entry.scripture?.components(separatedBy: ";").first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "")
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                } else {
+                    // Title as main line, date as secondary
+                    Text(entry.title)
+                        .font(.headline)
+                    Text(formattedDate(entry.date))
+                        .font(.caption)
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.vertical, 4)
+        }
+        .swipeActions(edge: .trailing) {
+            Button(role: .destructive, action: onDelete) {
+                Label("Delete", systemImage: "trash")
+            }
+            Button(action: onEdit) {
+                Label("Edit", systemImage: "pencil")
+            }
+            .tint(Color.appGreenDark)
+        }
+    }
+}
+
 
 struct SectionListView_Previews: PreviewProvider {
     static var previews: some View {

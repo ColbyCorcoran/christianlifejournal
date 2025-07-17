@@ -10,47 +10,39 @@ struct AddEntryView: View {
     var entryToEdit: JournalEntry? = nil
     @Environment(\.dismiss) private var dismiss
 
-    @State private var passages: [ScripturePassageSelection] = [ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1)]
+    @State private var title: String = ""
+    @FocusState private var isTitleFocused: Bool
     @State private var notes: String = ""
-    @State private var isPickerPresented: Bool = false
-    @State private var pickerIndex: Int = 0
     @State private var showLeaveAlert = false
     let date: Date
 
+    private var section: JournalSection {
+        if let entryToEdit = entryToEdit {
+            return JournalSection(rawValue: entryToEdit.section) ?? .other
+        }
+        return .other
+    }
+
+    private var navigationTitle: String {
+        "Add \(section.displayName) Entry"
+    }
+
     init(entryToEdit: JournalEntry? = nil) {
         self.entryToEdit = entryToEdit
-        var initialPassages: [ScripturePassageSelection]
-        if let entryToEdit, let stored = entryToEdit.scripture, !stored.isEmpty {
-            initialPassages = stored.components(separatedBy: ";").compactMap { ref in
-                let regex = #"^([1-3]?\s?[A-Za-z ]+)\s+(\d+):(\d+)(?:-(\d+))?$"#
-                guard let match = ref.range(of: regex, options: .regularExpression) else { return nil }
-                let comps = String(ref[match]).components(separatedBy: .whitespaces)
-                let book = comps.dropLast().joined(separator: " ")
-                let last = comps.last ?? ""
-                let chapterVerse = last.components(separatedBy: ":")
-                guard let chapter = Int(chapterVerse[0]) else { return nil }
-                let verseRange = chapterVerse.count > 1 ? chapterVerse[1].split(separator: "-").compactMap { Int($0) } : []
-                let verse = verseRange.first ?? 1
-                let verseEnd = verseRange.count > 1 ? verseRange.last! : verse
-                let bookIndex = bibleBooks.firstIndex(where: { $0.name == book }) ?? 0
-                return ScripturePassageSelection(bookIndex: bookIndex, chapter: chapter, verse: verse, verseEnd: verseEnd)
-            }
-        } else {
-            initialPassages = [ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1)]
-        }
-        _passages = State(initialValue: initialPassages)
         _notes = State(initialValue: entryToEdit?.notes ?? "")
+        _title = State(initialValue: entryToEdit?.title ?? "")
         self.date = entryToEdit?.date ?? Date()
     }
 
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 0) {
-                passageList
+                titleSection
                 notesSection
             }
             .background(Color.appWhite)
-            .navigationTitle(entryToEdit == nil ? "Add Entry" : "Edit Entry")
+            .navigationTitle(navigationTitle)
+            .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
                 leading: Button("Cancel") {
                     if hasUnsavedChanges {
@@ -60,27 +52,23 @@ struct AddEntryView: View {
                     }
                 },
                 trailing: Button(entryToEdit == nil ? "Add" : "Save") {
-                    let passagesString = passages.map { $0.displayString(bibleBooks: bibleBooks) ?? "" }
-                        .filter { !$0.isEmpty }
-                        .joined(separator: "; ")
                     if let entryToEdit = entryToEdit {
-                        entryToEdit.title = ""
-                        entryToEdit.scripture = passagesString
+                        entryToEdit.title = title
                         entryToEdit.notes = notes
                         try? modelContext.save()
                     } else {
                         let newEntry = JournalEntry(
                             section: entryToEdit?.section ?? "",
-                            title: "",
+                            title: title,
                             date: date,
-                            scripture: passagesString,
+                            scripture: "",
                             notes: notes
                         )
                         modelContext.insert(newEntry)
                     }
                     dismiss()
                 }
-                .disabled(passages.allSatisfy { $0.displayString(bibleBooks: bibleBooks)?.isEmpty ?? true })
+                .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             )
             .alert("Unsaved Changes", isPresented: $showLeaveAlert) {
                 Button("Discard Changes", role: .destructive) {
@@ -90,71 +78,53 @@ struct AddEntryView: View {
             } message: {
                 Text("You have unsaved changes. Are you sure you want to leave without saving?")
             }
-            .sheet(isPresented: $isPickerPresented) {
-                ScripturePickerView(
-                    bibleBooks: bibleBooks,
-                    selectedBookIndex: $passages[pickerIndex].bookIndex,
-                    selectedChapter: $passages[pickerIndex].chapter,
-                    selectedVerse: $passages[pickerIndex].verse,
-                    selectedVerseEnd: $passages[pickerIndex].verseEnd
-                )
-                .presentationDetents([.fraction(0.35)])
+            .tint(Color.appGreenDark)
+            .onAppear {
+                if entryToEdit == nil {
+                    isTitleFocused = true
+                }
             }
         }
         .tint(Color.appGreenDark)
     }
 
-    private var passageList: some View {
+    private var titleSection: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            TextField("Title", text: $title)
+                .font(.title2)
+                .padding(.horizontal)
+                .padding(.top, 24)
+                .padding(.bottom, 8)
+                .background(Color.appWhite)
+                .cornerRadius(8)
+                .focused($isTitleFocused)
+        }
+    }
+
+    private var notesSection: some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(formattedDate(date))
                 .font(.subheadline)
                 .foregroundColor(.gray)
-                .padding(.top, 24)
                 .padding(.bottom, 8)
-
-            ForEach(passages.indices, id: \.self) { idx in
-                PassageRow(
-                    passage: $passages[idx],
-                    isLast: idx == passages.count - 1,
-                    onAdd: {
-                        passages.append(ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1))
-                        pickerIndex = passages.count - 1
-                        isPickerPresented = true
-                    },
-                    isPickerPresented: Binding(
-                        get: { isPickerPresented && pickerIndex == idx },
-                        set: { newValue in
-                            isPickerPresented = newValue
-                            if newValue { pickerIndex = idx }
-                        }
-                    ),
-                    bibleBooks: bibleBooks
-                )
-                .padding(.bottom, 8)
-            }
 
             Divider()
                 .background(Color.appGreenDark)
                 .padding(.vertical, 8)
-        }
-        .padding(.horizontal)
-    }
 
-    private var notesSection: some View {
-        ZStack {
-            Color.appWhite
-            TextEditor(text: $notes)
-                .font(.body)
-                .padding(4)
-                .scrollContentBackground(.hidden)
-                .onTapGesture {
-                    isPickerPresented = false
-                }
+            ZStack {
+                Color.appWhite
+                TextEditor(text: $notes)
+                    .font(.body)
+                    .padding(4)
+                    .scrollContentBackground(.hidden)
+            }
+            .cornerRadius(8)
+            .padding(.horizontal)
+            .padding(.bottom, 12)
+            .frame(maxHeight: .infinity)
         }
-        .cornerRadius(8)
         .padding(.horizontal)
-        .padding(.bottom, 12)
-        .frame(maxHeight: .infinity)
     }
 
     private var hasUnsavedChanges: Bool {

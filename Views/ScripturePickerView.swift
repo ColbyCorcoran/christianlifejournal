@@ -41,80 +41,88 @@ struct ScripturePickerView: View {
     }
 
     var body: some View {
-        VStack(spacing: 8) {
-            HStack(spacing: 0) {
-                // Book Picker
-                Picker("Book", selection: $selectedBookIndex) {
-                    ForEach(0..<bibleBooks.count, id: \.self) { idx in
-                        Text(bibleBooks[idx].name).tag(idx)
-                    }
-                }
-                .pickerStyle(.wheel)
-                .frame(width: 140)
-                .clipped()
-                .onChange(of: selectedBookIndex) {
-                    adjustForBookChange()
-                }
+        ZStack {
+            Color.appWhite.ignoresSafeArea() // Fills the entire sheet
 
-                // Chapter Picker
-                Picker("Chapter", selection: $selectedChapter) {
-                    ForEach(1...chapterCount, id: \.self) { ch in
-                        Text("\(ch)").tag(ch)
+            VStack(spacing: 8) {
+                HStack(spacing: 0) {
+                    // Book Picker
+                    Picker("Book", selection: $selectedBookIndex) {
+                        ForEach(0..<bibleBooks.count, id: \.self) { idx in
+                            Text(bibleBooks[idx].name).tag(idx)
+                        }
                     }
-                }
-                .pickerStyle(.wheel)
-                .frame(width: 80)
-                .clipped()
-                .onChange(of: selectedChapter) {
-                    adjustForChapterChange()
-                }
+                    .pickerStyle(.wheel)
+                    .frame(width: 140)
+                    .clipped()
+                    .onChange(of: selectedBookIndex) {
+                        adjustForBookChange()
+                    }
 
-                // Verse Picker
-                Picker("Verse", selection: $selectedVerse) {
-                    ForEach(1...verseCount, id: \.self) { v in
-                        Text("\(v)").tag(v)
+                    // Chapter Picker
+                    Picker("Chapter", selection: $selectedChapter) {
+                        ForEach(1...chapterCount, id: \.self) { ch in
+                            Text("\(ch)").tag(ch)
+                        }
                     }
-                }
-                .pickerStyle(.wheel)
-                .frame(width: 80)
-                .clipped()
-                .onChange(of: selectedVerse) {
-                    if selectedVerseEnd < selectedVerse {
-                        selectedVerseEnd = selectedVerse
+                    .pickerStyle(.wheel)
+                    .frame(width: 80)
+                    .clipped()
+                    .onChange(of: selectedChapter) {
+                        adjustForChapterChange()
                     }
-                }
 
-                // Verse End Picker (for range)
-                Picker("Verse End", selection: $selectedVerseEnd) {
-                    ForEach(selectedVerse...verseCount, id: \.self) { v in
-                        Text("\(v)").tag(v)
+                    // Colon between chapter and verse
+                    Text(":")
+                        .font(.title2)
+                        .frame(width: 5, alignment: .center)
+
+                    // Verse Picker
+                    Picker("Verse", selection: $selectedVerse) {
+                        ForEach(1...verseCount, id: \.self) { v in
+                            Text("\(v)").tag(v)
+                        }
                     }
+                    .pickerStyle(.wheel)
+                    .frame(width: 80)
+                    .clipped()
+                    .onChange(of: selectedVerse) {
+                        if selectedVerseEnd < selectedVerse {
+                            selectedVerseEnd = selectedVerse
+                        }
+                    }
+                    
+                    //Dash between verse and verse end
+                    Text("-")
+                        .font(.title2)
+                        .frame(width: 5, alignment: .center)
+
+                    // Verse End Picker (for range)
+                    Picker("Verse End", selection: $selectedVerseEnd) {
+                        let lower = min(selectedVerse, verseCount)
+                        let upper = max(selectedVerse, verseCount)
+                        ForEach(lower...upper, id: \.self) { v in
+                            Text("\(v)").tag(v)
+                        }
+                    }
+                    .pickerStyle(.wheel)
+                    .frame(width: 80)
+                    .clipped()
                 }
-                .pickerStyle(.wheel)
-                .frame(width: 80)
-                .clipped()
+                .frame(height: 180)
+                .background(Color.appWhite)
+
+                // Display the selected passage
+                Text(formattedPassage)
+                    .font(.title2)
+                    .foregroundColor(.primary)
+                    .padding(.top, 12)
             }
-            .frame(height: 180)
-            
-
-            // Display the selected passage
-            Text(formattedPassage)
-                .font(.title2)
-                .foregroundColor(.appGreenDark)
-                .padding(.top, 8)
-                .padding(.bottom, 12)
+            .padding(.bottom, 8)
         }
-        .background(Color.appWhite)
-        .padding(.bottom, 8)
     }
 }
 
-// MARK: - Safe Array Indexing Helper
-extension Array {
-    subscript(safe index: Int) -> Element? {
-        indices.contains(index) ? self[index] : nil
-    }
-}
 
 struct ScripturePickerView_Previews: PreviewProvider {
     static var previews: some View {

@@ -11,13 +11,14 @@ struct ScripturePassageSelector: View {
     let bibleBooks: [BibleBook]
     @Binding var passage: ScripturePassageSelection
     @Binding var isPickerPresented: Bool
-    var label: String = "Select Passage"
+    var label: String = "Scripture Passage"
 
     var body: some View {
         Button(action: { isPickerPresented = true }) {
             HStack {
-                Text(passage.displayString(bibleBooks: bibleBooks) ?? label)
-                    .foregroundColor(passage.isValid(bibleBooks: bibleBooks) ? .primary : .red)
+                let display = passage.displayString(bibleBooks: bibleBooks)
+                Text(display.isEmpty ? label : display)
+                    .foregroundColor(display.isEmpty ? .secondary : .primary)
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
                     .foregroundColor(.appGreenDark)
@@ -26,8 +27,13 @@ struct ScripturePassageSelector: View {
             .background(RoundedRectangle(cornerRadius: 8).fill(Color.appGreenPale))
         }
         .buttonStyle(PlainButtonStyle())
+        .frame(width: UIScreen.main.bounds.width / 2)
     }
 }
+
+
+
+
 
 // Data structure for a single passage selection
 struct ScripturePassageSelection: Equatable {

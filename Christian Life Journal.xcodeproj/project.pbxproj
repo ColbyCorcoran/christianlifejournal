@@ -24,6 +24,7 @@
 		B675A6CF2E273CC600B5906D /* ScripturePickerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B675A6CE2E273CC600B5906D /* ScripturePickerView.swift */; };
 		B675A6D12E27423200B5906D /* ScripturePassageSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */; };
 		B675A6D32E274ED000B5906D /* PassageRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B675A6D22E274ED000B5906D /* PassageRow.swift */; };
+		B6E0622A2E283CF300BF32DE /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E062292E283CF300BF32DE /* Utilities.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -64,6 +65,7 @@
 		B675A6CE2E273CC600B5906D /* ScripturePickerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScripturePickerView.swift; sourceTree = "<group>"; };
 		B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScripturePassageSelector.swift; sourceTree = "<group>"; };
 		B675A6D22E274ED000B5906D /* PassageRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassageRow.swift; sourceTree = "<group>"; };
+		B6E062292E283CF300BF32DE /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -162,6 +164,7 @@
 			children = (
 				B60C524D2E05BC0D00800EB8 /* DateUtils.swift */,
 				B6693C532E0607B1002FD994 /* Color+AppColors.swift */,
+				B6E062292E283CF300BF32DE /* Utilities.swift */,
 			);
 			path = Supporting;
 			sourceTree = "<group>";
@@ -320,6 +323,7 @@
 				B60C524E2E05BC0D00800EB8 /* DateUtils.swift in Sources */,
 				B675A6D12E27423200B5906D /* ScripturePassageSelector.swift in Sources */,
 				B6693C542E0607B1002FD994 /* Color+AppColors.swift in Sources */,
+				B6E0622A2E283CF300BF32DE /* Utilities.swift in Sources */,
 				B60C52702E05FB7500800EB8 /* JournalModels.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

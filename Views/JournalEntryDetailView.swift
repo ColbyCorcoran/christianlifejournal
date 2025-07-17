@@ -18,18 +18,47 @@ struct JournalEntryDetailView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 16) {
-                Text(entry.title)
-                    .font(.title)
-                    .bold()
-                Text(formattedDate(entry.date))
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                // ...rest of your content...
+                // Title (or date for Personal Time)
+                if entry.section == JournalSection.personalTime.rawValue {
+                    Text(formattedDate(entry.date))
+                        .font(.title)
+                        .bold()
+                } else {
+                    Text(entry.title)
+                        .font(.title)
+                        .bold()
+                }
+
+                // Date (if not Personal Time)
+                if entry.section != JournalSection.personalTime.rawValue {
+                    Text(formattedDate(entry.date))
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+
+                // Scripture passage(s)
+                if let scripture = entry.scripture, !scripture.isEmpty {
+                    Text(scripture)
+                        .font(.headline)
+                        .foregroundColor(.appGreenDark)
+                }
+
+                // Body/Notes
+                if let notes = entry.notes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Divider()
+                        .background(Color.appGreenDark)
+                    Text(notes)
+                        .font(.body)
+                        .foregroundColor(.primary)
+                        .padding(.top, 4)
+                }
+
                 Spacer()
             }
             .padding()
             .frame(maxWidth: .infinity, alignment: .leading)
         }
+        .background(Color.appWhite.ignoresSafeArea())
         .navigationBarTitleDisplayMode(.inline)
         .navigationTitle("")
         .toolbar {
@@ -60,8 +89,8 @@ struct JournalEntryDetailView_Previews: PreviewProvider {
             section: JournalSection.sermonNotes.rawValue,
             title: "Sample",
             date: Date(),
-            scripture: "",
-            notes: ""
+            scripture: "John 3:16",
+            notes: "This is the body text/notes for the entry."
         )
         JournalEntryDetailView(entry: entry)
             .modelContainer(for: JournalEntry.self, inMemory: true)

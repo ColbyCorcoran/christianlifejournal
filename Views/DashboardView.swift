@@ -27,7 +27,7 @@ struct DashboardView: View {
     var body: some View {
         NavigationStack(path: $path) {
             VStack(spacing: 0) {
-                VStack(spacing: 8) {
+                VStack(spacing: 40) {
                     ForEach(menuSections, id: \.self) { section in
                         CardSectionView(
                             section: section,

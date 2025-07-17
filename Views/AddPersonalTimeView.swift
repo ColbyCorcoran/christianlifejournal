@@ -18,6 +18,8 @@ struct AddPersonalTimeView: View {
     @State private var isPickerPresented: Bool = false
     @State private var pickerIndex: Int = 0
     @State private var showLeaveAlert = false
+    @State private var passageToDelete: Int? = nil
+    @State private var tempPickerSelection: ScripturePassageSelection = ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1)
     let date: Date
 
     init(entryToEdit: JournalEntry? = nil) {
@@ -49,12 +51,20 @@ struct AddPersonalTimeView: View {
     var body: some View {
         NavigationView {
             VStack(alignment: .leading, spacing: 0) {
+                Text(formattedDate(date))
+                    .font(.largeTitle.bold())
+                    .foregroundColor(.appGreenDark)
+                    .padding(.top, 32)
+                    .padding(.horizontal)
+                    .padding(.bottom, 8)
+
                 passageList
                 notesSection
                 reflectionBox
             }
             .background(Color.appWhite)
-            .navigationTitle(entryToEdit == nil ? "Add Personal Time" : "Edit Entry")
+            .navigationTitle("Add Personal Time")
+            .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
                 leading: Button("Cancel") {
                     if hasUnsavedChanges {
@@ -64,7 +74,7 @@ struct AddPersonalTimeView: View {
                     }
                 },
                 trailing: Button(entryToEdit == nil ? "Add" : "Save") {
-                    let passagesString = passages.map { $0.displayString(bibleBooks: bibleBooks) ?? "" }
+                    let passagesString = passages.map { $0.displayString(bibleBooks: bibleBooks) }
                         .filter { !$0.isEmpty }
                         .joined(separator: "; ")
                     if let entryToEdit = entryToEdit {
@@ -84,7 +94,7 @@ struct AddPersonalTimeView: View {
                     }
                     dismiss()
                 }
-                .disabled(passages.allSatisfy { $0.displayString(bibleBooks: bibleBooks)?.isEmpty ?? true })
+                .disabled(passages.allSatisfy { $0.displayString(bibleBooks: bibleBooks).isEmpty })
             )
             .alert("Unsaved Changes", isPresented: $showLeaveAlert) {
                 Button("Discard Changes", role: .destructive) {
@@ -94,54 +104,83 @@ struct AddPersonalTimeView: View {
             } message: {
                 Text("You have unsaved changes. Are you sure you want to leave without saving?")
             }
-            .sheet(isPresented: $isPickerPresented) {
+            .alert("Delete Passage?", isPresented: Binding(
+                get: { passageToDelete != nil },
+                set: { if !$0 { passageToDelete = nil } }
+            )) {
+                Button("Delete", role: .destructive) {
+                    if let idx = passageToDelete {
+                        passages.remove(at: idx)
+                        if pickerIndex >= passages.count { pickerIndex = passages.count - 1 }
+                    }
+                    passageToDelete = nil
+                }
+                Button("Cancel", role: .cancel) {
+                    passageToDelete = nil
+                }
+            } message: {
+                Text("Are you sure you want to delete this scripture passage?")
+            }
+            .sheet(isPresented: $isPickerPresented, onDismiss: {
+                passages[pickerIndex] = tempPickerSelection
+            }) {
                 ScripturePickerView(
                     bibleBooks: bibleBooks,
-                    selectedBookIndex: $passages[pickerIndex].bookIndex,
-                    selectedChapter: $passages[pickerIndex].chapter,
-                    selectedVerse: $passages[pickerIndex].verse,
-                    selectedVerseEnd: $passages[pickerIndex].verseEnd
+                    selectedBookIndex: $tempPickerSelection.bookIndex,
+                    selectedChapter: $tempPickerSelection.chapter,
+                    selectedVerse: $tempPickerSelection.verse,
+                    selectedVerseEnd: $tempPickerSelection.verseEnd
                 )
                 .presentationDetents([.fraction(0.35)])
             }
+            .tint(Color.appGreenDark)
         }
         .tint(Color.appGreenDark)
     }
 
     private var passageList: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(formattedDate(date))
-                .font(.subheadline)
-                .foregroundColor(.gray)
-                .padding(.top, 24)
-                .padding(.bottom, 8)
-
             ForEach(passages.indices, id: \.self) { idx in
-                PassageRow(
-                    passage: $passages[idx],
-                    isLast: idx == passages.count - 1,
-                    onAdd: {
-                        passages.append(ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1))
-                        pickerIndex = passages.count - 1
-                        isPickerPresented = true
-                    },
-                    isPickerPresented: Binding(
-                        get: { isPickerPresented && pickerIndex == idx },
-                        set: { newValue in
-                            isPickerPresented = newValue
-                            if newValue { pickerIndex = idx }
-                        }
-                    ),
-                    bibleBooks: bibleBooks
-                )
-                .padding(.bottom, 8)
+                passageRow(for: idx)
+                    .padding(.bottom, 8)
             }
-
             Divider()
                 .background(Color.appGreenDark)
                 .padding(.vertical, 8)
         }
         .padding(.horizontal)
+    }
+
+    private func passageRow(for idx: Int) -> some View {
+        let binding = Binding<ScripturePassageSelection>(
+            get: { passages[safe: idx] ?? ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1) },
+            set: { passages[safe: idx] = $0 }
+        )
+        return PassageRow(
+            passage: binding,
+            isLast: idx == passages.count - 1,
+            onAdd: {
+                passages.append(ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1))
+                pickerIndex = passages.count - 1
+                tempPickerSelection = passages.last ?? ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1)
+                isPickerPresented = true
+            },
+            onDelete: {
+                passageToDelete = idx
+            },
+            isPickerPresented: Binding(
+                get: { isPickerPresented && pickerIndex == idx },
+                set: { newValue in
+                    isPickerPresented = newValue
+                    if newValue {
+                        pickerIndex = idx
+                        tempPickerSelection = passages[safe: idx] ?? ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1)
+                    }
+                }
+            ),
+            bibleBooks: bibleBooks,
+            canDelete: passages.count > 1
+        )
     }
 
     private var notesSection: some View {
@@ -163,25 +202,25 @@ struct AddPersonalTimeView: View {
 
     private var reflectionBox: some View {
         VStack(alignment: .center, spacing: 12) {
-                                    Text("What do these Scriptures say about God?")
-                                        .font(.body.bold())
-                                        .foregroundColor(.appWhite)
-                                    Text("What do these Scriptures say about man?")
-                                        .font(.body.bold())
-                                        .foregroundColor(.appWhite)
-                                    Text("How is God asking me to obey?")
-                                        .font(.body.bold())
-                                        .foregroundColor(.appWhite)
-                                }
-                                .padding()
-                                .frame(maxWidth: .infinity)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 16)
-                                        .fill(Color.appGreenDark)
-                                        .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
-                                )
-                                .padding(.horizontal)
-                                .padding(.bottom, 16)
+                    Text("What do these Scriptures say about God?")
+                        .font(.body.bold())
+                        .foregroundColor(.appWhite)
+                    Text("What do these Scriptures say about man?")
+                        .font(.body.bold())
+                        .foregroundColor(.appWhite)
+                    Text("How is God asking me to obey?")
+                        .font(.body.bold())
+                        .foregroundColor(.appWhite)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.appGreenDark)
+                        .shadow(color: Color.black.opacity(0.06), radius: 4, x: 0, y: 2)
+                )
+                .padding(.horizontal)
+                .padding(.bottom, 16)
             }
 
     private var hasUnsavedChanges: Bool {
