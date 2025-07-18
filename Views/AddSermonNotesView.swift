@@ -15,14 +15,14 @@ struct AddSermonNotesView: View {
 
     @State private var title: String = ""
     @FocusState private var isTitleFocused: Bool
-    @State private var passages: [ScripturePassageSelection] = [ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1)]
+    @State private var passages: [ScripturePassageSelection] = [ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)]
     @State private var notes: String = ""
     @State private var speaker: String = ""
     @State private var isPickerPresented: Bool = false
     @State private var pickerIndex: Int = 0
     @State private var showLeaveAlert = false
     @State private var passageToDelete: Int? = nil
-    @State private var tempPickerSelection: ScripturePassageSelection = ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1)
+    @State private var tempPickerSelection: ScripturePassageSelection = ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
     let date: Date
 
     init(entryToEdit: JournalEntry? = nil) {
@@ -40,11 +40,12 @@ struct AddSermonNotesView: View {
                 let verseRange = chapterVerse.count > 1 ? chapterVerse[1].split(separator: "-").compactMap { Int($0) } : []
                 let verse = verseRange.first ?? 1
                 let verseEnd = verseRange.count > 1 ? verseRange.last! : verse
-                let bookIndex = bibleBooks.firstIndex(where: { $0.name == book }) ?? 0
+                let bookIndex = bibleBooks.firstIndex(where: { $0.name == book }) ?? -1 // Changed from 0 to -1
                 return ScripturePassageSelection(bookIndex: bookIndex, chapter: chapter, verse: verse, verseEnd: verseEnd)
             }
         } else {
-            initialPassages = [ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1)]
+            // Default state: no scripture selected
+            initialPassages = [ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)]
         }
         _passages = State(initialValue: initialPassages)
         _notes = State(initialValue: entryToEdit?.notes ?? "")
@@ -63,7 +64,7 @@ struct AddSermonNotesView: View {
                 notesSection
             }
             .background(Color.appWhite)
-            .navigationTitle("Add Sermon Notes")
+            .navigationTitle("Add Sermon Notes Entry")
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
                 leading: Button("Cancel") {
@@ -74,9 +75,14 @@ struct AddSermonNotesView: View {
                     }
                 },
                 trailing: Button(entryToEdit == nil ? "Add" : "Save") {
-                    let passagesString = passages.map { $0.displayString(bibleBooks: bibleBooks) }
-                        .filter { !$0.isEmpty }
-                        .joined(separator: "; ")
+                    let passagesString = passages.compactMap { passage in
+                        // Only include passages that have a book selected
+                        guard passage.bookIndex >= 0 else { return nil }
+                        return passage.displayString(bibleBooks: bibleBooks)
+                    }
+                    .filter { !$0.isEmpty }
+                    .joined(separator: "; ")
+                    
                     if let entryToEdit = entryToEdit {
                         entryToEdit.title = title
                         entryToEdit.scripture = passagesString
@@ -97,7 +103,7 @@ struct AddSermonNotesView: View {
                     dismiss()
                 }
                 .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-                          passages.allSatisfy { $0.displayString(bibleBooks: bibleBooks).isEmpty })
+                          passages.allSatisfy { $0.bookIndex < 0 }) // Changed validation logic
             )
             .alert("Unsaved Changes", isPresented: $showLeaveAlert) {
                 Button("Discard Changes", role: .destructive) {
@@ -122,7 +128,7 @@ struct AddSermonNotesView: View {
                     passageToDelete = nil
                 }
             } message: {
-                Text("Are you sure you want to delete this scripture passage?")
+                Text("Are you sure you want to delete this Scripture passage?")
             }
             .sheet(isPresented: $isPickerPresented, onDismiss: {
                 passages[pickerIndex] = tempPickerSelection
@@ -163,16 +169,16 @@ struct AddSermonNotesView: View {
 
     private func passageRow(for idx: Int) -> some View {
         let binding = Binding<ScripturePassageSelection>(
-            get: { passages[safe: idx] ?? ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1) },
+            get: { passages[safe: idx] ?? ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1) },
             set: { passages[safe: idx] = $0 }
         )
         return PassageRow(
             passage: binding,
             isLast: idx == passages.count - 1,
             onAdd: {
-                passages.append(ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1))
+                passages.append(ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1))
                 pickerIndex = passages.count - 1
-                tempPickerSelection = passages.last ?? ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1)
+                tempPickerSelection = passages.last ?? ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
                 isPickerPresented = true
             },
             onDelete: {
@@ -184,7 +190,7 @@ struct AddSermonNotesView: View {
                     isPickerPresented = newValue
                     if newValue {
                         pickerIndex = idx
-                        tempPickerSelection = passages[safe: idx] ?? ScripturePassageSelection(bookIndex: 0, chapter: 1, verse: 1, verseEnd: 1)
+                        tempPickerSelection = passages[safe: idx] ?? ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
                     }
                 }
             ),

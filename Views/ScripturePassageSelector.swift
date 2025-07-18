@@ -12,13 +12,13 @@ struct ScripturePassageSelector: View {
     @Binding var passage: ScripturePassageSelection
     @Binding var isPickerPresented: Bool
     var label: String = "Scripture Passage"
-
+    
     var body: some View {
         Button(action: { isPickerPresented = true }) {
             HStack {
                 let display = passage.displayString(bibleBooks: bibleBooks)
-                Text(display.isEmpty ? label : display)
-                    .foregroundColor(display.isEmpty ? .secondary : .primary)
+                Text(display ?? label) // Fixed: Handle nil return from displayString
+                    .foregroundColor((display?.isEmpty ?? true) ? .secondary : .primary)
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")
                     .foregroundColor(.appGreenDark)
@@ -31,19 +31,15 @@ struct ScripturePassageSelector: View {
     }
 }
 
-
-
-
-
 // Data structure for a single passage selection
 struct ScripturePassageSelection: Equatable {
     var bookIndex: Int
     var chapter: Int
     var verse: Int
     var verseEnd: Int
-
+    
     func displayString(bibleBooks: [BibleBook]) -> String? {
-        guard bookIndex < bibleBooks.count else { return nil }
+        guard bookIndex >= 0 && bookIndex < bibleBooks.count else { return nil }
         let book = bibleBooks[bookIndex].name
         if verseEnd > verse {
             return "\(book) \(chapter):\(verse)-\(verseEnd)"
@@ -51,9 +47,9 @@ struct ScripturePassageSelection: Equatable {
             return "\(book) \(chapter):\(verse)"
         }
     }
-
+    
     func isValid(bibleBooks: [BibleBook]) -> Bool {
-        guard bookIndex < bibleBooks.count else { return false }
+        guard bookIndex >= 0 && bookIndex < bibleBooks.count else { return false }
         let book = bibleBooks[bookIndex]
         guard chapter >= 1, chapter <= book.chapters.count else { return false }
         let maxVerse = book.chapters[chapter - 1]
@@ -62,4 +58,3 @@ struct ScripturePassageSelection: Equatable {
         return true
     }
 }
-

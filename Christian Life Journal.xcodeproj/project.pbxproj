@@ -25,6 +25,7 @@
 		B675A6D12E27423200B5906D /* ScripturePassageSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */; };
 		B675A6D32E274ED000B5906D /* PassageRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B675A6D22E274ED000B5906D /* PassageRow.swift */; };
 		B6E0622A2E283CF300BF32DE /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E062292E283CF300BF32DE /* Utilities.swift */; };
+		B6E0622C2E2B053A00BF32DE /* SettingsMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E0622B2E2B053A00BF32DE /* SettingsMenuView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -66,6 +67,7 @@
 		B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScripturePassageSelector.swift; sourceTree = "<group>"; };
 		B675A6D22E274ED000B5906D /* PassageRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassageRow.swift; sourceTree = "<group>"; };
 		B6E062292E283CF300BF32DE /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
+		B6E0622B2E2B053A00BF32DE /* SettingsMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsMenuView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -155,6 +157,7 @@
 				B675A6CE2E273CC600B5906D /* ScripturePickerView.swift */,
 				B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */,
 				B675A6D22E274ED000B5906D /* PassageRow.swift */,
+				B6E0622B2E2B053A00BF32DE /* SettingsMenuView.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -307,6 +310,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B6E0622C2E2B053A00BF32DE /* SettingsMenuView.swift in Sources */,
 				B60C52562E05BC7B00800EB8 /* DashboardView.swift in Sources */,
 				B60C52642E05D0C000800EB8 /* AddPersonalTimeView.swift in Sources */,
 				B60C525E2E05BD1700800EB8 /* AddEntryView.swift in Sources */,
