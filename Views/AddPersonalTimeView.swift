@@ -19,6 +19,7 @@ struct AddPersonalTimeView: View {
     @State private var pickerIndex: Int = 0
     @State private var showLeaveAlert = false
     @State private var passageToDelete: Int? = nil
+    @State private var showScripturePicker = false
     @State private var tempPickerSelection: ScripturePassageSelection = ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
     let date: Date
 

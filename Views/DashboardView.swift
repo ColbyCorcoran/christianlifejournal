@@ -7,6 +7,16 @@
 import SwiftUI
 import SwiftData
 
+enum SettingsPage {
+    case main
+    case sectionControls
+    case userExperienceControls
+    case appInformation
+    case tagManagement
+    case speakerManagement
+    case scriptureMemorization
+}
+
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.date, order: .reverse) private var allEntries: [JournalEntry]
@@ -15,6 +25,9 @@ struct DashboardView: View {
     @State private var showSearch = false
     @State private var searchText = ""
     @State private var showSettings = false
+    @State private var settingsPage: SettingsPage = .main
+    @StateObject var speakerStore = SpeakerStore()
+
 
     private let menuSections: [JournalSection] = [
         .personalTime,
@@ -103,13 +116,18 @@ struct DashboardView: View {
                 if showSettings {
                     Color.black.opacity(0.2)
                         .ignoresSafeArea()
-                        .onTapGesture { showSettings = false }
+                        .onTapGesture { showSettings = false; settingsPage = .main }
 
-                    SettingsMenuView()
-                        .frame(maxWidth: 340)
-                        .transition(.scale)
-                        .zIndex(2)
+                    SettingsMenuView(
+                        isPresented: $showSettings,
+                        settingsPage: $settingsPage,
+                        speakerStore: speakerStore
+                    )
+                    .frame(maxWidth: 340)
+                    .transition(.scale)
+                    .zIndex(2)
                 }
+
             }
             .sheet(item: $addEntry) { entry in
                 addEntrySheetView(for: entry)
@@ -143,7 +161,7 @@ struct DashboardView: View {
         case .personalTime:
             AddPersonalTimeView(entryToEdit: entry)
         case .sermonNotes:
-            AddSermonNotesView(entryToEdit: entry)
+            AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore)
         case .scriptureToMemorize, .prayerJournal, .groupNotes, .other, .none:
             AddEntryView(entryToEdit: entry)
         }

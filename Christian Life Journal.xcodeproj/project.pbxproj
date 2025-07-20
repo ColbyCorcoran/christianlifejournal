@@ -26,6 +26,10 @@
 		B675A6D32E274ED000B5906D /* PassageRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B675A6D22E274ED000B5906D /* PassageRow.swift */; };
 		B6E0622A2E283CF300BF32DE /* Utilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E062292E283CF300BF32DE /* Utilities.swift */; };
 		B6E0622C2E2B053A00BF32DE /* SettingsMenuView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E0622B2E2B053A00BF32DE /* SettingsMenuView.swift */; };
+		B6E0622E2E2C56F300BF32DE /* TagManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E0622D2E2C56F300BF32DE /* TagManagementView.swift */; };
+		B6E062302E2C570C00BF32DE /* SpeakerManagementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E0622F2E2C570C00BF32DE /* SpeakerManagementView.swift */; };
+		B6E062322E2C6CDA00BF32DE /* SpeakerStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E062312E2C6CDA00BF32DE /* SpeakerStore.swift */; };
+		B6E062342E2C6CF200BF32DE /* SpeakerPickerOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6E062332E2C6CF200BF32DE /* SpeakerPickerOverlay.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -68,6 +72,10 @@
 		B675A6D22E274ED000B5906D /* PassageRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PassageRow.swift; sourceTree = "<group>"; };
 		B6E062292E283CF300BF32DE /* Utilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utilities.swift; sourceTree = "<group>"; };
 		B6E0622B2E2B053A00BF32DE /* SettingsMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsMenuView.swift; sourceTree = "<group>"; };
+		B6E0622D2E2C56F300BF32DE /* TagManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TagManagementView.swift; sourceTree = "<group>"; };
+		B6E0622F2E2C570C00BF32DE /* SpeakerManagementView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerManagementView.swift; sourceTree = "<group>"; };
+		B6E062312E2C6CDA00BF32DE /* SpeakerStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerStore.swift; sourceTree = "<group>"; };
+		B6E062332E2C6CF200BF32DE /* SpeakerPickerOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeakerPickerOverlay.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -131,6 +139,7 @@
 				B60C524F2E05BC3E00800EB8 /* JournalSection.swift */,
 				B60C526F2E05FB7500800EB8 /* JournalModels.swift */,
 				B671270D2E21E4C00097E590 /* BibleBooks.swift */,
+				B6E062312E2C6CDA00BF32DE /* SpeakerStore.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -158,6 +167,9 @@
 				B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */,
 				B675A6D22E274ED000B5906D /* PassageRow.swift */,
 				B6E0622B2E2B053A00BF32DE /* SettingsMenuView.swift */,
+				B6E0622D2E2C56F300BF32DE /* TagManagementView.swift */,
+				B6E0622F2E2C570C00BF32DE /* SpeakerManagementView.swift */,
+				B6E062332E2C6CF200BF32DE /* SpeakerPickerOverlay.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -314,13 +326,17 @@
 				B60C52562E05BC7B00800EB8 /* DashboardView.swift in Sources */,
 				B60C52642E05D0C000800EB8 /* AddPersonalTimeView.swift in Sources */,
 				B60C525E2E05BD1700800EB8 /* AddEntryView.swift in Sources */,
+				B6E062302E2C570C00BF32DE /* SpeakerManagementView.swift in Sources */,
 				B675A6CF2E273CC600B5906D /* ScripturePickerView.swift in Sources */,
 				B60C526A2E05DFD700800EB8 /* JournalEntryDetailView.swift in Sources */,
+				B6E062342E2C6CF200BF32DE /* SpeakerPickerOverlay.swift in Sources */,
 				B60C52682E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift in Sources */,
 				B671270E2E21E4C00097E590 /* BibleBooks.swift in Sources */,
 				B60C52502E05BC3E00800EB8 /* JournalSection.swift in Sources */,
 				B60C525C2E05BD0C00800EB8 /* SectionListView.swift in Sources */,
+				B6E0622E2E2C56F300BF32DE /* TagManagementView.swift in Sources */,
 				B60C526E2E05E56800800EB8 /* CardSectionView.swift in Sources */,
+				B6E062322E2C6CDA00BF32DE /* SpeakerStore.swift in Sources */,
 				B67127082E2186EE0097E590 /* SearchView.swift in Sources */,
 				B675A6D32E274ED000B5906D /* PassageRow.swift in Sources */,
 				B60C52662E05D0CA00800EB8 /* AddSermonNotesView.swift in Sources */,

@@ -8,76 +8,166 @@
 import SwiftUI
 
 struct SettingsMenuView: View {
+    @Binding var isPresented: Bool
+    @Binding var settingsPage: SettingsPage
+    @ObservedObject var speakerStore: SpeakerStore
+
     var body: some View {
-        VStack(spacing: 24) {
-            // App logo and version
-            VStack(spacing: 4) {
-                Image(systemName: "leaf.fill") // Replace with your logo if you have one
-                    .resizable()
-                    .frame(width: 48, height: 48)
-                    .foregroundColor(.appGreenDark)
-                Text("Christian Life Journal")
-                    .font(.headline)
-                Text("Version 1.0.0")
-                    .font(.caption)
-                    .foregroundColor(.secondary)
-                Text("iOS \(UIDevice.current.systemVersion)")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
-            }
-            .padding(.top, 12)
+        ZStack {
+            switch settingsPage {
+            case .main:
+                VStack(spacing: 24) {
+                    // App logo and version
+                    VStack(spacing: 4) {
+                        Image(systemName: "leaf.fill")
+                            .resizable()
+                            .frame(width: 48, height: 48)
+                            .foregroundColor(.appGreenDark)
+                        Text("Christian Life Journal")
+                            .font(.headline)
+                        Text("Version 1.0.0")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                        Text("iOS \(UIDevice.current.systemVersion)")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 12)
 
-            Divider()
+                    Divider()
 
-            ScrollView {
-                // Settings options
-                VStack(alignment: .leading, spacing: 18) {
-                    Button(action: { /* TODO: Tag Management */ }) {
+                    VStack(alignment: .leading, spacing: 18) {
+                        Button(action: { settingsPage = .sectionControls }) {
+                            Label("Section Controls", systemImage: "slider.horizontal.3")
+                        }
+                        Button(action: { settingsPage = .userExperienceControls }) {
+                            Label("User Experience Controls", systemImage: "hand.tap")
+                        }
+                        Button(action: { settingsPage = .appInformation }) {
+                            Label("App Information", systemImage: "info.circle")
+                        }
+                    }
+                    .buttonStyle(.plain)
+                    .font(.body)
+                    .foregroundColor(.primary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+
+                }
+
+            case .sectionControls:
+                VStack(spacing: 18) {
+                    HStack {
+                        Button(action: { settingsPage = .main }) {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .buttonStyle(.plain)
+                        Spacer()
+                    }
+                    .padding(.top, 8)
+                    Text("Section Controls")
+                        .font(.headline)
+                        .padding(.bottom, 8)
+                    Button(action: { settingsPage = .tagManagement }) {
                         Label("Tag Management", systemImage: "tag.circle")
                     }
-                    Button(action: { /* TODO: Speaker Management */ }) {
-                        Label("Speaker Management", systemImage: "person.crop.circle")
+                    Button(action: { settingsPage = .speakerManagement }) {
+                        Label("Speaker Management", systemImage: "person.2")
                     }
-                    
-                    Toggle(isOn: .constant(false)) {
-                        Label("Use FaceID", systemImage: "faceid")
+                    Button(action: { settingsPage = .scriptureMemorization }) {
+                        Label("Scripture Memorization System", systemImage: "switch.2")
                     }
-                    .disabled(true) // Makes it non-interactive
-                    
-                    Toggle(isOn: .constant(false)) {
-                        Label("Use FaceID", systemImage: "faceid")
-                    }
-                    .disabled(true) // Makes it non-interactive
-                    
-
-                    Toggle(isOn: .constant(false)) {
-                        Label("Use iCloud Syncing", systemImage: "arrow.trianglehead.2.clockwise.rotate.90.icloud")
-                    }
-                    .disabled(true) // Makes it non-interactive
-                    
-                    
-                    Button(action: { /* TODO: Help & Feedback */ }) {
-                        Label("Feedback Board", systemImage: "questionmark.circle")
-                    }
-                    Button(action: { /* TODO: Contact */ }) {
-                        Label("Contact", systemImage: "envelope.circle")
-                    }
-                    Button(action: { /* TODO: Terms & Privacy */ }) {
-                        Label("Terms & Privacy Policy", systemImage: "document.circle")
-                    }
-                    
+                    Spacer()
                 }
-                .buttonStyle(.plain)
-                .font(.body)
-                .foregroundColor(.primary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-           
 
-            
+            case .userExperienceControls:
+                VStack(spacing: 18) {
+                    HStack {
+                        Button(action: { settingsPage = .main }) {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .buttonStyle(.plain)
+                        Spacer()
+                    }
+                    .padding(.top, 8)
+                    Text("User Experience Controls")
+                        .font(.headline)
+                        .padding(.bottom, 8)
+                    
+                    Toggle(isOn: .constant(false)) {
+                        Label("FaceID", systemImage: "faceid")
+                    }
+                    .disabled(true)
+                    
+                    Toggle(isOn: .constant(false)) {
+                        Label("Haptic Feedback", systemImage: "iphone.radiowaves.left.and.right")
+                    }
+                    .disabled(true)
+                    
+                    Toggle(isOn: .constant(false)) {
+                        Label("iCloud Sync", systemImage: "arrow.trianglehead.2.clockwise.rotate.90.icloud")
+                    }
+                    .disabled(true)
+                    
+                    Spacer()
+                }
+
+            case .appInformation:
+                VStack(spacing: 18) {
+                    HStack {
+                        Button(action: { settingsPage = .main }) {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .buttonStyle(.plain)
+                        Spacer()
+                    }
+                    .padding(.top, 8)
+                    Text("App Information")
+                        .font(.headline)
+                        .padding(.bottom, 8)
+                    Button("Feedback Board") { /* TODO */ }
+                    Button("Terms & Privacy Policy") { /* TODO */ }
+                    Button("Contact") { /* TODO */ }
+                    Spacer()
+                }
+
+            case .tagManagement:
+                TagManagementView(settingsPage: $settingsPage)
+
+            case .speakerManagement:
+                SpeakerManagementView(settingsPage: $settingsPage, speakerStore: speakerStore)
+
+            case .scriptureMemorization:
+                VStack(spacing: 18) {
+                    HStack {
+                        Button(action: { settingsPage = .sectionControls }) {
+                            Image(systemName: "chevron.left")
+                            Text("Back")
+                        }
+                        .buttonStyle(.plain)
+                        Spacer()
+                    }
+                    .padding(.top, 8)
+                    
+                    Text("Scripture Memorization System")
+                        .font(.headline)
+                        .padding(.bottom, 8)
+                    Text("Our app utilizes a three-phase memorization system and will guide you through each of the 3 phases for each verse you choose to memorize. If you do not wish to use this system, and instead want the 'Scripture to Memorize' section of this app to simply be flashcards, turn this toggle off. This will allow you to memorize however you like and will change the way the section will function and look.")
+                        .font(.body)
+                        .foregroundColor(.secondary)
+                    Toggle(isOn: .constant(true)) {
+                        Label("Memorization System", systemImage: "book")
+                    }
+                    .disabled(true)
+                    
+                    Spacer()
+                }
+            }
         }
         .padding()
-        .frame(width: 320, height: 520)
+        .frame(width: 340, height: 380)
         .background(
             RoundedRectangle(cornerRadius: 24)
                 .fill(Color.appWhite)
@@ -88,7 +178,6 @@ struct SettingsMenuView: View {
 
 struct SettingsMenuView_Previews: PreviewProvider {
     static var previews: some View {
-        SettingsMenuView()
+        SettingsMenuView(isPresented: .constant(true), settingsPage: .constant(.main), speakerStore: SpeakerStore())
     }
 }
-

@@ -9,7 +9,7 @@ import Foundation
 
 enum JournalSection: String, CaseIterable {
     case personalTime = "Personal Time with God"
-    case scriptureToMemorize = "Scripture to Memorize"
+    case scriptureToMemorize = "Scripture Memorization"
     case prayerJournal = "Prayer Journal"
     case sermonNotes = "Sermon Notes"
     case groupNotes = "Group Notes"
@@ -18,7 +18,7 @@ enum JournalSection: String, CaseIterable {
     var displayName: String {
         switch self {
         case .personalTime: return "Personal Time"
-        case .scriptureToMemorize: return "Scripture to Memorize"
+        case .scriptureToMemorize: return "Scripture Memorization"
         case .prayerJournal: return "Prayer Journal"
         case .sermonNotes: return "Sermon Notes"
         case .groupNotes: return "Group Notes"

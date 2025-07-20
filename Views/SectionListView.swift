@@ -11,6 +11,8 @@ struct SectionListView: View {
     @Environment(\.modelContext) private var modelContext
     let section: JournalSection
     @Query(sort: \JournalEntry.date, order: .reverse) private var allEntries: [JournalEntry]
+    
+    @StateObject var speakerStore = SpeakerStore()
 
     @State private var addEntry: JournalEntry?
     @State private var showEditSheet = false
@@ -87,7 +89,7 @@ struct SectionListView: View {
         case .personalTime:
             AddPersonalTimeView(entryToEdit: entry)
         case .sermonNotes:
-            AddSermonNotesView(entryToEdit: entry)
+            AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore)
         case .scriptureToMemorize, .prayerJournal, .groupNotes, .other, .none:
             AddEntryView(entryToEdit: entry)
         }

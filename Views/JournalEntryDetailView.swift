@@ -12,6 +12,8 @@ struct JournalEntryDetailView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     let entry: JournalEntry
+    
+    @StateObject var speakerStore = SpeakerStore()
 
     @State private var showEditSheet = false
 
@@ -75,7 +77,7 @@ struct JournalEntryDetailView: View {
             case .personalTime:
                 AddPersonalTimeView(entryToEdit: entry)
             case .sermonNotes:
-                AddSermonNotesView(entryToEdit: entry)
+                AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore)
             case .scriptureToMemorize, .prayerJournal, .groupNotes, .other, .none:
                 AddEntryView(entryToEdit: entry)
             }

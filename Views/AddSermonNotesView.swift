@@ -12,21 +12,25 @@ struct AddSermonNotesView: View {
     @Environment(\.modelContext) private var modelContext
     var entryToEdit: JournalEntry? = nil
     @Environment(\.dismiss) private var dismiss
+    
+    @ObservedObject var speakerStore: SpeakerStore
 
     @State private var title: String = ""
     @FocusState private var isTitleFocused: Bool
     @State private var passages: [ScripturePassageSelection] = [ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)]
     @State private var notes: String = ""
-    @State private var speaker: String = ""
+    @State private var selectedSpeaker: String = ""
     @State private var isPickerPresented: Bool = false
     @State private var pickerIndex: Int = 0
+    @State private var showSpeakerPicker = false
     @State private var showLeaveAlert = false
     @State private var passageToDelete: Int? = nil
     @State private var tempPickerSelection: ScripturePassageSelection = ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
     let date: Date
 
-    init(entryToEdit: JournalEntry? = nil) {
+    init(entryToEdit: JournalEntry? = nil, speakerStore: SpeakerStore) {
         self.entryToEdit = entryToEdit
+        self.speakerStore = speakerStore
         var initialPassages: [ScripturePassageSelection]
         if let entryToEdit, let stored = entryToEdit.scripture, !stored.isEmpty {
             initialPassages = stored.components(separatedBy: ";").compactMap { ref in
@@ -49,9 +53,10 @@ struct AddSermonNotesView: View {
         }
         _passages = State(initialValue: initialPassages)
         _notes = State(initialValue: entryToEdit?.notes ?? "")
-        _speaker = State(initialValue: entryToEdit?.speaker ?? "")
+//        _speaker = State(initialValue: entryToEdit?.speaker ?? "")
         _title = State(initialValue: entryToEdit?.title ?? "")
         self.date = entryToEdit?.date ?? Date()
+        _selectedSpeaker = State(initialValue: entryToEdit?.speaker ?? "")
     }
 
     var body: some View {
@@ -87,7 +92,7 @@ struct AddSermonNotesView: View {
                         entryToEdit.title = title
                         entryToEdit.scripture = passagesString
                         entryToEdit.notes = notes
-                        entryToEdit.speaker = speaker
+                        entryToEdit.speaker = selectedSpeaker
                         try? modelContext.save()
                     } else {
                         let newEntry = JournalEntry(
@@ -96,7 +101,7 @@ struct AddSermonNotesView: View {
                             date: date,
                             scripture: passagesString,
                             notes: notes,
-                            speaker: speaker
+                            speaker: selectedSpeaker
                         )
                         modelContext.insert(newEntry)
                     }
@@ -142,6 +147,17 @@ struct AddSermonNotesView: View {
                 )
                 .presentationDetents([.fraction(0.35)])
             }
+            .overlay(
+                Group {
+                    if showSpeakerPicker {
+                        SpeakerPickerOverlay(
+                            speakerStore: speakerStore,
+                            isPresented: $showSpeakerPicker,
+                            selectedSpeaker: $selectedSpeaker
+                        )
+                    }
+                }
+            )
             .tint(Color.appGreenDark)
             .onAppear {
                 if entryToEdit == nil {
@@ -154,10 +170,10 @@ struct AddSermonNotesView: View {
 
     private var passageList: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(formattedDate(date))
-                .font(.subheadline)
-                .foregroundColor(.gray)
-                .padding(.bottom, 8)
+//            Text(formattedDate(date))
+//                .font(.subheadline)
+//                .foregroundColor(.gray)
+//                .padding(.bottom, 8)
 
             ForEach(passages.indices, id: \.self) { idx in
                 passageRow(for: idx)
@@ -201,27 +217,45 @@ struct AddSermonNotesView: View {
 
     private var titleSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            TextField("Title", text: $title)
-                .font(.title2)
-                .padding(.horizontal)
-                .padding(.top, 24)
-                .padding(.bottom, 8)
-                .background(Color.appWhite)
-                .cornerRadius(8)
-                .focused($isTitleFocused)
+            HStack {
+                TextField("Title", text: $title)
+                    .font(.title2)
+                    .padding(.horizontal)
+                    .padding(.top, 24)
+                    .padding(.bottom, 8)
+                    .background(Color.appWhite)
+                    .cornerRadius(8)
+                    .focused($isTitleFocused)
+                
+                Text(formattedDate(date))
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .padding(.horizontal)
+                    .padding(.top, 24)
+                    .padding(.bottom, 8)
+            }
         }
     }
 
     private var speakerSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            TextField("Speaker", text: $speaker)
-                .font(.headline)
-                .background(Color.appWhite)
-                .cornerRadius(8)
+            VStack(alignment: .leading, spacing: 0) {
+                Button(action: { showSpeakerPicker = true }) {
+                    HStack {
+                        Text(selectedSpeaker.isEmpty ? "Select Speaker" : selectedSpeaker)
+                            .foregroundColor(selectedSpeaker.isEmpty ? .secondary : .primary)
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .foregroundColor(.appGreenDark)
+                    }
+                    .padding(8)
+                    .background(RoundedRectangle(cornerRadius: 8).fill(Color.appGreenPale))
+                    .frame(width: UIScreen.main.bounds.width / 2)
+                }
+                .buttonStyle(PlainButtonStyle())
                 .padding(.horizontal)
                 .padding(.bottom, 8)
+            }
         }
-    }
 
     private var divider: some View {
         Divider()
@@ -255,7 +289,7 @@ struct AddSermonNotesView: View {
 
 struct AddSermonNotesView_Previews: PreviewProvider {
     static var previews: some View {
-        AddSermonNotesView()
+        AddSermonNotesView(entryToEdit: nil, speakerStore: SpeakerStore())
             .modelContainer(for: JournalEntry.self, inMemory: true)
     }
 }

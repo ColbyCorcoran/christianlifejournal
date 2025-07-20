@@ -90,24 +90,28 @@ struct AddEntryView: View {
 
     private var titleSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            TextField("Title", text: $title)
-                .font(.title2)
-                .padding(.horizontal)
-                .padding(.top, 24)
-                .padding(.bottom, 8)
-                .background(Color.appWhite)
-                .cornerRadius(8)
-                .focused($isTitleFocused)
+            HStack {
+                TextField("Title", text: $title)
+                    .font(.title2)
+                    .padding(.horizontal)
+                    .padding(.top, 24)
+                    .padding(.bottom, 8)
+                    .background(Color.appWhite)
+                    .cornerRadius(8)
+                    .focused($isTitleFocused)
+                
+                Text(formattedDate(date))
+                    .font(.subheadline)
+                    .foregroundColor(.gray)
+                    .padding(.horizontal)
+                    .padding(.top, 24)
+                    .padding(.bottom, 8)
+            }
         }
     }
 
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text(formattedDate(date))
-                .font(.subheadline)
-                .foregroundColor(.gray)
-                .padding(.bottom, 8)
-
             Divider()
                 .background(Color.appGreenDark)
                 .padding(.vertical, 8)
