@@ -1,18 +1,18 @@
 //
-//  SpeakerPickerOverlay.swift
+//  TagPickerOverlay.swift
 //  Christian Life Journal
 //
-//  Created by Colby Corcoran on 7/19/25.
+//  Created by Colby Corcoran on 7/30/25.
 //
 
 import SwiftUI
 
-struct SpeakerPickerOverlay: View {
-    @ObservedObject var speakerStore: SpeakerStore
+struct TagPickerOverlay: View {
+    @ObservedObject var tagStore: TagStore
     @Binding var isPresented: Bool
-    @Binding var selectedSpeaker: String
-    @State private var newSpeaker: String = ""
-    @State private var tempSelection: String = ""
+    @Binding var selectedTags: Set<String> // Set of tag names
+    @State private var tempSelection: Set<String> = []
+    @State private var newTag: String = ""
     
     private func dismissOverlay() {
         isPresented = false
@@ -26,8 +26,9 @@ struct SpeakerPickerOverlay: View {
 
             VStack(spacing: 18) {
                 ZStack {
-                    Text("Select Speaker")
+                    Text("Select Tags")
                         .font(.headline)
+                    
                     HStack {
                         Button(action: dismissOverlay) {
                             Image(systemName: "xmark.circle.fill")
@@ -38,9 +39,7 @@ struct SpeakerPickerOverlay: View {
                         Spacer()
                         
                         Button(action: {
-                            if !tempSelection.isEmpty {
-                                selectedSpeaker = tempSelection
-                            }
+                            selectedTags = tempSelection
                             isPresented = false
                         }) {
                             Image(systemName: "checkmark.circle.fill")
@@ -48,22 +47,26 @@ struct SpeakerPickerOverlay: View {
                                 .foregroundColor(.appGreenDark)
                         }
                     }
+                    .padding(.top, 8)
                 }
-                .padding(.top, 8)
 
                 List {
-                    ForEach(speakerStore.speakers, id: \.self) { speaker in
+                    ForEach(tagStore.userTags, id: \.id) { tag in
                         HStack {
-                            Text(speaker)
+                            Text(tag.name)
                             Spacer()
-                            if tempSelection == speaker {
+                            if tempSelection.contains(tag.name) {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.appGreenDark)
                             }
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            tempSelection = speaker
+                            if tempSelection.contains(tag.name) {
+                                tempSelection.remove(tag.name)
+                            } else {
+                                tempSelection.insert(tag.name)
+                            }
                         }
                     }
                 }
@@ -74,21 +77,21 @@ struct SpeakerPickerOverlay: View {
                 .frame(maxHeight: 200)
 
                 HStack {
-                    TextField("New Speaker", text: $newSpeaker)
+                    TextField("New Tag", text: $newTag)
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     Button("Create") {
-                        let trimmed = newSpeaker.trimmingCharacters(in: .whitespaces)
-                        if !trimmed.isEmpty && !speakerStore.speakers.contains(trimmed) {
-                            speakerStore.addSpeaker(trimmed)
-                            tempSelection = trimmed
-                            newSpeaker = ""
+                        let trimmed = newTag.trimmingCharacters(in: .whitespaces)
+                        if !trimmed.isEmpty && !tagStore.userTags.contains(where: { $0.name.caseInsensitiveCompare(trimmed) == .orderedSame }) {
+                            tagStore.addUserTag(trimmed)
+                            tempSelection.insert(trimmed)
+                            newTag = ""
                         }
                     }
                     .buttonStyle(.borderedProminent)
                     .tint(.appGreenDark)
                 }
                 .padding(.top, 8)
-//                Spacer()
+                
             }
             .padding()
             .frame(width: 340, height: 320)
@@ -98,19 +101,18 @@ struct SpeakerPickerOverlay: View {
                     .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 8)
             )
             .onAppear {
-                tempSelection = selectedSpeaker
+                tempSelection = selectedTags
             }
         }
     }
 }
 
-struct SpeakerPickerOverlay_Previews: PreviewProvider {
+struct TagPickerOverlay_Previews: PreviewProvider {
     static var previews: some View {
-        SpeakerPickerOverlay(
-            speakerStore: SpeakerStore(),
+        TagPickerOverlay(
+            tagStore: TagStore(),
             isPresented: .constant(true),
-            selectedSpeaker: .constant("")
+            selectedTags: .constant(["Prayer"])
         )
     }
 }
-

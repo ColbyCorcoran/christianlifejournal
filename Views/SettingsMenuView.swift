@@ -11,6 +11,10 @@ struct SettingsMenuView: View {
     @Binding var isPresented: Bool
     @Binding var settingsPage: SettingsPage
     @ObservedObject var speakerStore: SpeakerStore
+    @ObservedObject var tagStore: TagStore
+    let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+    let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
+
 
     var body: some View {
         ZStack {
@@ -25,7 +29,7 @@ struct SettingsMenuView: View {
                             .foregroundColor(.appGreenDark)
                         Text("Christian Life Journal")
                             .font(.headline)
-                        Text("Version 1.0.0")
+                        Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"))")
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Text("iOS \(UIDevice.current.systemVersion)")
@@ -68,14 +72,17 @@ struct SettingsMenuView: View {
                     Text("Section Controls")
                         .font(.headline)
                         .padding(.bottom, 8)
-                    Button(action: { settingsPage = .tagManagement }) {
-                        Label("Tag Management", systemImage: "tag.circle")
-                    }
-                    Button(action: { settingsPage = .speakerManagement }) {
-                        Label("Speaker Management", systemImage: "person.2")
-                    }
-                    Button(action: { settingsPage = .scriptureMemorization }) {
-                        Label("Scripture Memorization System", systemImage: "switch.2")
+                    VStack(alignment: .leading, spacing: 18) {
+                        Button(action: { settingsPage = .tagManagement }) {
+                            Label("Tag Management", systemImage: "tag.circle")
+                        }
+                        
+                        Button(action: { settingsPage = .speakerManagement }) {
+                            Label("Speaker Management", systemImage: "person.2")
+                        }
+                        Button(action: { settingsPage = .scriptureMemorization }) {
+                            Label("Scripture Memorization System", systemImage: "switch.2")
+                        }
                     }
                     Spacer()
                 }
@@ -95,20 +102,22 @@ struct SettingsMenuView: View {
                         .font(.headline)
                         .padding(.bottom, 8)
                     
-                    Toggle(isOn: .constant(false)) {
-                        Label("FaceID", systemImage: "faceid")
+                    VStack(alignment: .leading, spacing: 18) {
+                        Toggle(isOn: .constant(false)) {
+                            Label("FaceID", systemImage: "faceid")
+                        }
+                        .disabled(true)
+                        
+                        Toggle(isOn: .constant(false)) {
+                            Label("Haptic Feedback", systemImage: "iphone.radiowaves.left.and.right")
+                        }
+                        .disabled(true)
+                        
+                        Toggle(isOn: .constant(false)) {
+                            Label("iCloud Sync", systemImage: "arrow.trianglehead.2.clockwise.rotate.90.icloud")
+                        }
+                        .disabled(true)
                     }
-                    .disabled(true)
-                    
-                    Toggle(isOn: .constant(false)) {
-                        Label("Haptic Feedback", systemImage: "iphone.radiowaves.left.and.right")
-                    }
-                    .disabled(true)
-                    
-                    Toggle(isOn: .constant(false)) {
-                        Label("iCloud Sync", systemImage: "arrow.trianglehead.2.clockwise.rotate.90.icloud")
-                    }
-                    .disabled(true)
                     
                     Spacer()
                 }
@@ -127,14 +136,22 @@ struct SettingsMenuView: View {
                     Text("App Information")
                         .font(.headline)
                         .padding(.bottom, 8)
-                    Button("Feedback Board") { /* TODO */ }
-                    Button("Terms & Privacy Policy") { /* TODO */ }
-                    Button("Contact") { /* TODO */ }
+                    VStack(alignment: .leading, spacing: 18) {
+                        Button(action: { /* TODO */ }) {
+                            Label("Feedback Board", systemImage: "ellipsis.message")
+                        }
+                        Button(action: { /* TODO */ }) {
+                            Label("Terms & Privacy Policy", systemImage: "text.document")
+                        }
+                        Button(action: { /* TODO */ }) {
+                            Label("Contact", systemImage: "envelope")
+                        }
+                    }
                     Spacer()
                 }
 
             case .tagManagement:
-                TagManagementView(settingsPage: $settingsPage)
+                TagManagementView(settingsPage: $settingsPage, tagStore: tagStore)
 
             case .speakerManagement:
                 SpeakerManagementView(settingsPage: $settingsPage, speakerStore: speakerStore)
@@ -154,8 +171,8 @@ struct SettingsMenuView: View {
                     Text("Scripture Memorization System")
                         .font(.headline)
                         .padding(.bottom, 8)
-                    Text("Our app utilizes a three-phase memorization system and will guide you through each of the 3 phases for each verse you choose to memorize. If you do not wish to use this system, and instead want the 'Scripture to Memorize' section of this app to simply be flashcards, turn this toggle off. This will allow you to memorize however you like and will change the way the section will function and look.")
-                        .font(.body)
+                    Text("Our app utilizes a three-phase memorization system and will guide you through each of the 3 phases for each verse you choose to memorize. If you do not wish to use this system, and instead want the 'Scripture Memorization' section of this app to simply be flashcards, turn this toggle off. This will change the way the section will function and look.")
+                        .font(.caption)
                         .foregroundColor(.secondary)
                     Toggle(isOn: .constant(true)) {
                         Label("Memorization System", systemImage: "book")
@@ -178,6 +195,6 @@ struct SettingsMenuView: View {
 
 struct SettingsMenuView_Previews: PreviewProvider {
     static var previews: some View {
-        SettingsMenuView(isPresented: .constant(true), settingsPage: .constant(.main), speakerStore: SpeakerStore())
+        SettingsMenuView(isPresented: .constant(true), settingsPage: .constant(.main), speakerStore: SpeakerStore(), tagStore: TagStore())
     }
 }

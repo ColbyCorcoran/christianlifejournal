@@ -27,6 +27,7 @@ struct DashboardView: View {
     @State private var showSettings = false
     @State private var settingsPage: SettingsPage = .main
     @StateObject var speakerStore = SpeakerStore()
+    @StateObject var tagStore = TagStore()
 
 
     private let menuSections: [JournalSection] = [
@@ -121,7 +122,7 @@ struct DashboardView: View {
                     SettingsMenuView(
                         isPresented: $showSettings,
                         settingsPage: $settingsPage,
-                        speakerStore: speakerStore
+                        speakerStore: speakerStore, tagStore: tagStore
                     )
                     .frame(maxWidth: 340)
                     .transition(.scale)
@@ -159,11 +160,11 @@ struct DashboardView: View {
     private func addEntrySheetView(for entry: JournalEntry) -> some View {
         switch JournalSection(rawValue: entry.section) {
         case .personalTime:
-            AddPersonalTimeView(entryToEdit: entry)
+            AddPersonalTimeView(entryToEdit: entry, tagStore: tagStore)
         case .sermonNotes:
-            AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore)
+            AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore, tagStore: tagStore)
         case .scriptureToMemorize, .prayerJournal, .groupNotes, .other, .none:
-            AddEntryView(entryToEdit: entry)
+            AddEntryView(entryToEdit: entry, tagStore: tagStore)
         }
     }
 }

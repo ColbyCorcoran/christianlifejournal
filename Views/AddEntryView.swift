@@ -9,12 +9,16 @@ struct AddEntryView: View {
     @Environment(\.modelContext) private var modelContext
     var entryToEdit: JournalEntry? = nil
     @Environment(\.dismiss) private var dismiss
+    
+    @ObservedObject var tagStore: TagStore
 
     @State private var title: String = ""
     @FocusState private var isTitleFocused: Bool
     @State private var notes: String = ""
     @State private var showLeaveAlert = false
     let date: Date
+    @State private var showTagPicker = false
+    @State private var selectedTags: Set<String> = []
 
     private var section: JournalSection {
         if let entryToEdit = entryToEdit {
@@ -27,8 +31,9 @@ struct AddEntryView: View {
         "Add \(section.displayName) Entry"
     }
 
-    init(entryToEdit: JournalEntry? = nil) {
+    init(entryToEdit: JournalEntry? = nil, tagStore: TagStore) {
         self.entryToEdit = entryToEdit
+        self.tagStore = tagStore
         _notes = State(initialValue: entryToEdit?.notes ?? "")
         _title = State(initialValue: entryToEdit?.title ?? "")
         self.date = entryToEdit?.date ?? Date()
@@ -38,6 +43,7 @@ struct AddEntryView: View {
         NavigationView {
             VStack(alignment: .leading, spacing: 0) {
                 titleSection
+                tagsSection
                 notesSection
             }
             .background(Color.appWhite)
@@ -78,6 +84,10 @@ struct AddEntryView: View {
             } message: {
                 Text("You have unsaved changes. Are you sure you want to leave without saving?")
             }
+            .overlay(TagPickerOverlay(tagStore: tagStore, isPresented: $showTagPicker, selectedTags: $selectedTags)
+            .opacity(showTagPicker ? 1: 0)
+            .animation(.easeInOut(duration: 0.2), value: showTagPicker)
+            )
             .tint(Color.appGreenDark)
             .onAppear {
                 if entryToEdit == nil {
@@ -109,6 +119,34 @@ struct AddEntryView: View {
             }
         }
     }
+    
+    private var tagsSection: some View {
+        Button(action: { showTagPicker = true }) {
+                    HStack {
+                        if selectedTags.isEmpty {
+                            Text("Add Tags")
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("Tags Added")
+                                .foregroundColor(.appGreenDark)
+                                .fontWeight(.semibold)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .foregroundColor(.appGreenDark)
+                    }
+                    .padding(8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(selectedTags.isEmpty ? Color.appGreenPale : Color.appGreenLight)
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+                .frame(width: UIScreen.main.bounds.width / 2)
+    }
+    
 
     private var notesSection: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -139,7 +177,7 @@ struct AddEntryView: View {
 
 struct AddEntryView_Previews: PreviewProvider {
     static var previews: some View {
-        AddEntryView()
+        AddEntryView( tagStore: TagStore())
             .modelContainer(for: JournalEntry.self, inMemory: true)
     }
 }

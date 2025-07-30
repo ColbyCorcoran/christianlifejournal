@@ -14,10 +14,12 @@ struct AddSermonNotesView: View {
     @Environment(\.dismiss) private var dismiss
     
     @ObservedObject var speakerStore: SpeakerStore
+    @ObservedObject var tagStore: TagStore
 
     @State private var title: String = ""
     @FocusState private var isTitleFocused: Bool
     @State private var passages: [ScripturePassageSelection] = [ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)]
+    
     @State private var notes: String = ""
     @State private var selectedSpeaker: String = ""
     @State private var isPickerPresented: Bool = false
@@ -25,12 +27,14 @@ struct AddSermonNotesView: View {
     @State private var showSpeakerPicker = false
     @State private var showLeaveAlert = false
     @State private var passageToDelete: Int? = nil
-    @State private var tempPickerSelection: ScripturePassageSelection = ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
+    @State private var showTagPicker = false
+    @State private var selectedTags: Set<String> = []
     let date: Date
 
-    init(entryToEdit: JournalEntry? = nil, speakerStore: SpeakerStore) {
+    init(entryToEdit: JournalEntry? = nil, speakerStore: SpeakerStore, tagStore: TagStore) {
         self.entryToEdit = entryToEdit
         self.speakerStore = speakerStore
+        self.tagStore = tagStore
         var initialPassages: [ScripturePassageSelection]
         if let entryToEdit, let stored = entryToEdit.scripture, !stored.isEmpty {
             initialPassages = stored.components(separatedBy: ";").compactMap { ref in
@@ -64,7 +68,11 @@ struct AddSermonNotesView: View {
             VStack(alignment: .leading, spacing: 0) {
                 titleSection
                 passageList
-                speakerSection
+//                HStack {
+//                    speakerSection
+//                    
+//                    tagsSection
+//                }
                 divider
                 notesSection
             }
@@ -80,10 +88,10 @@ struct AddSermonNotesView: View {
                     }
                 },
                 trailing: Button(entryToEdit == nil ? "Add" : "Save") {
-                    let passagesString = passages.compactMap { passage in
+                    let passagesString = passages.compactMap { passages in
                         // Only include passages that have a book selected
-                        guard passage.bookIndex >= 0 else { return nil }
-                        return passage.displayString(bibleBooks: bibleBooks)
+                        guard passages.bookIndex >= 0 else { return nil }
+                        return passages.displayString(bibleBooks: bibleBooks)
                     }
                     .filter { !$0.isEmpty }
                     .joined(separator: "; ")
@@ -135,28 +143,36 @@ struct AddSermonNotesView: View {
             } message: {
                 Text("Are you sure you want to delete this Scripture passage?")
             }
-            .sheet(isPresented: $isPickerPresented, onDismiss: {
-                passages[pickerIndex] = tempPickerSelection
-            }) {
-                ScripturePickerView(
-                    bibleBooks: bibleBooks,
-                    selectedBookIndex: $tempPickerSelection.bookIndex,
-                    selectedChapter: $tempPickerSelection.chapter,
-                    selectedVerse: $tempPickerSelection.verse,
-                    selectedVerseEnd: $tempPickerSelection.verseEnd
-                )
-                .presentationDetents([.fraction(0.35)])
-            }
             .overlay(
-                Group {
-                    if showSpeakerPicker {
-                        SpeakerPickerOverlay(
-                            speakerStore: speakerStore,
-                            isPresented: $showSpeakerPicker,
-                            selectedSpeaker: $selectedSpeaker
-                        )
-                    }
-                }
+                // Add the overlay here
+                ScripturePickerOverlay(
+                    bibleBooks: bibleBooks,
+                    isPresented: $isPickerPresented,
+                    passages: Binding<ScripturePassageSelection>(
+                        get: {
+                            guard pickerIndex >= 0 && pickerIndex < passages.count else {
+                                return ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
+                            }
+                            return passages[pickerIndex]
+                        },
+                        set: { newValue in
+                            guard pickerIndex >= 0 && pickerIndex < passages.count else { return }
+                            passages[pickerIndex] = newValue
+                        }
+                    )
+                )
+                .opacity(isPickerPresented ? 1 : 0)
+                .animation(.easeInOut(duration: 0.2), value: isPickerPresented)
+            )
+            .overlay(
+                // Add the overlay here
+                SpeakerPickerOverlay(
+                    speakerStore: speakerStore,
+                    isPresented: $showSpeakerPicker,
+                    selectedSpeaker: $selectedSpeaker
+                )
+                .opacity(showSpeakerPicker ? 1 : 0)
+                .animation(.easeInOut(duration: 0.2), value: showSpeakerPicker)
             )
             .tint(Color.appGreenDark)
             .onAppear {
@@ -189,12 +205,11 @@ struct AddSermonNotesView: View {
             set: { passages[safe: idx] = $0 }
         )
         return PassageRow(
-            passage: binding,
+            passages: binding,
             isLast: idx == passages.count - 1,
             onAdd: {
                 passages.append(ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1))
                 pickerIndex = passages.count - 1
-                tempPickerSelection = passages.last ?? ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
                 isPickerPresented = true
             },
             onDelete: {
@@ -206,7 +221,6 @@ struct AddSermonNotesView: View {
                     isPickerPresented = newValue
                     if newValue {
                         pickerIndex = idx
-                        tempPickerSelection = passages[safe: idx] ?? ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
                     }
                 }
             ),
@@ -263,6 +277,33 @@ struct AddSermonNotesView: View {
             .padding(.vertical, 8)
             .padding(.horizontal)
     }
+    
+    private var tagsSection: some View {
+        Button(action: { showTagPicker = true }) {
+                    HStack {
+                        if selectedTags.isEmpty {
+                            Text("Add Tags")
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("Tags Added")
+                                .foregroundColor(.appGreenDark)
+                                .fontWeight(.semibold)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .foregroundColor(.appGreenDark)
+                    }
+                    .padding(8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(selectedTags.isEmpty ? Color.appGreenPale : Color.appGreenLight)
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+                .frame(width: UIScreen.main.bounds.width / 2)
+    }
 
     private var notesSection: some View {
         ZStack {
@@ -289,7 +330,7 @@ struct AddSermonNotesView: View {
 
 struct AddSermonNotesView_Previews: PreviewProvider {
     static var previews: some View {
-        AddSermonNotesView(entryToEdit: nil, speakerStore: SpeakerStore())
+        AddSermonNotesView(entryToEdit: nil, speakerStore: SpeakerStore(), tagStore: TagStore())
             .modelContainer(for: JournalEntry.self, inMemory: true)
     }
 }

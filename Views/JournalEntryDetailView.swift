@@ -14,6 +14,7 @@ struct JournalEntryDetailView: View {
     let entry: JournalEntry
     
     @StateObject var speakerStore = SpeakerStore()
+    @StateObject var tagStore = TagStore()
 
     @State private var showEditSheet = false
 
@@ -75,11 +76,11 @@ struct JournalEntryDetailView: View {
         .sheet(isPresented: $showEditSheet) {
             switch JournalSection(rawValue: entry.section) {
             case .personalTime:
-                AddPersonalTimeView(entryToEdit: entry)
+                AddPersonalTimeView(entryToEdit: entry, tagStore: tagStore)
             case .sermonNotes:
-                AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore)
+                AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore, tagStore: tagStore)
             case .scriptureToMemorize, .prayerJournal, .groupNotes, .other, .none:
-                AddEntryView(entryToEdit: entry)
+                AddEntryView(entryToEdit: entry, tagStore: tagStore)
             }
         }
     }

@@ -12,19 +12,25 @@ struct AddPersonalTimeView: View {
     @Environment(\.modelContext) private var modelContext
     var entryToEdit: JournalEntry? = nil
     @Environment(\.dismiss) private var dismiss
+    
+    @ObservedObject var tagStore: TagStore
 
     @State private var passages: [ScripturePassageSelection] = [ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)]
+    
     @State private var notes: String = ""
     @State private var isPickerPresented: Bool = false
     @State private var pickerIndex: Int = 0
     @State private var showLeaveAlert = false
     @State private var passageToDelete: Int? = nil
-    @State private var showScripturePicker = false
-    @State private var tempPickerSelection: ScripturePassageSelection = ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
+    @State private var showScripturePickerOverlay = false
+    @State private var showTagPicker = false
+    @State private var selectedTags: Set<String> = []
+    
     let date: Date
 
-    init(entryToEdit: JournalEntry? = nil) {
+    init(entryToEdit: JournalEntry? = nil, tagStore: TagStore) {
         self.entryToEdit = entryToEdit
+        self.tagStore = tagStore
         var initialPassages: [ScripturePassageSelection]
         if let entryToEdit, let stored = entryToEdit.scripture, !stored.isEmpty {
             initialPassages = stored.components(separatedBy: ";").compactMap { ref in
@@ -128,18 +134,27 @@ struct AddPersonalTimeView: View {
             } message: {
                 Text("Are you sure you want to delete this Scripture passage?")
             }
-            .sheet(isPresented: $isPickerPresented, onDismiss: {
-                passages[pickerIndex] = tempPickerSelection
-            }) {
-                ScripturePickerView(
+            .overlay(
+                // Add the overlay here
+                ScripturePickerOverlay(
                     bibleBooks: bibleBooks,
-                    selectedBookIndex: $tempPickerSelection.bookIndex,
-                    selectedChapter: $tempPickerSelection.chapter,
-                    selectedVerse: $tempPickerSelection.verse,
-                    selectedVerseEnd: $tempPickerSelection.verseEnd
+                    isPresented: $isPickerPresented,
+                    passages: Binding<ScripturePassageSelection>(
+                        get: {
+                            guard pickerIndex >= 0 && pickerIndex < passages.count else {
+                                return ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
+                            }
+                            return passages[pickerIndex]
+                        },
+                        set: { newValue in
+                            guard pickerIndex >= 0 && pickerIndex < passages.count else { return }
+                            passages[pickerIndex] = newValue
+                        }
+                    )
                 )
-                .presentationDetents([.fraction(0.35)])
-            }
+                .opacity(isPickerPresented ? 1 : 0)
+                .animation(.easeInOut(duration: 0.2), value: isPickerPresented)
+            )
             .tint(Color.appGreenDark)
         }
         .tint(Color.appGreenDark)
@@ -164,12 +179,12 @@ struct AddPersonalTimeView: View {
             set: { passages[safe: idx] = $0 }
         )
         return PassageRow(
-            passage: binding,
+            passages: binding,
             isLast: idx == passages.count - 1,
             onAdd: {
                 passages.append(ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1))
                 pickerIndex = passages.count - 1
-                tempPickerSelection = passages.last ?? ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
+                
                 isPickerPresented = true
             },
             onDelete: {
@@ -181,13 +196,40 @@ struct AddPersonalTimeView: View {
                     isPickerPresented = newValue
                     if newValue {
                         pickerIndex = idx
-                        tempPickerSelection = passages[safe: idx] ?? ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
+                        
                     }
                 }
             ),
             bibleBooks: bibleBooks,
             canDelete: passages.count > 1
         )
+    }
+    
+    private var tagsSection: some View {
+        Button(action: { showTagPicker = true }) {
+                    HStack {
+                        if selectedTags.isEmpty {
+                            Text("Add Tags")
+                                .foregroundColor(.secondary)
+                        } else {
+                            Text("Tags Added")
+                                .foregroundColor(.appGreenDark)
+                                .fontWeight(.semibold)
+                        }
+                        Spacer()
+                        Image(systemName: "chevron.up.chevron.down")
+                            .foregroundColor(.appGreenDark)
+                    }
+                    .padding(8)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(selectedTags.isEmpty ? Color.appGreenPale : Color.appGreenLight)
+                    )
+                }
+                .buttonStyle(PlainButtonStyle())
+                .padding(.horizontal)
+                .padding(.bottom, 8)
+                .frame(width: UIScreen.main.bounds.width / 2)
     }
 
     private var notesSection: some View {
@@ -238,7 +280,7 @@ struct AddPersonalTimeView: View {
 
 struct AddPersonalTimeView_Previews: PreviewProvider {
     static var previews: some View {
-        AddPersonalTimeView()
+        AddPersonalTimeView(tagStore: TagStore())
             .modelContainer(for: JournalEntry.self, inMemory: true)
     }
 }

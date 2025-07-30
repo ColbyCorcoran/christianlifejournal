@@ -7,7 +7,7 @@
 import SwiftUI
 
 struct PassageRow: View {
-    @Binding var passage: ScripturePassageSelection
+    @Binding var passages: ScripturePassageSelection
     var isLast: Bool
     var onAdd: () -> Void
     var onDelete: () -> Void
@@ -19,7 +19,7 @@ struct PassageRow: View {
         HStack(alignment: .center, spacing: 8) {
             ScripturePassageSelector(
                 bibleBooks: bibleBooks,
-                passage: $passage,
+                passages: $passages,
                 isPickerPresented: $isPickerPresented,
                 label: "Scripture Passage"
             )

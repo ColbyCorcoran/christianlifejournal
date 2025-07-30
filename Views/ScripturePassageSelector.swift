@@ -9,15 +9,15 @@ import SwiftUI
 
 struct ScripturePassageSelector: View {
     let bibleBooks: [BibleBook]
-    @Binding var passage: ScripturePassageSelection
+    @Binding var passages: ScripturePassageSelection
     @Binding var isPickerPresented: Bool
     var label: String = "Scripture Passage"
     
     var body: some View {
         Button(action: { isPickerPresented = true }) {
             HStack {
-                let display = passage.displayString(bibleBooks: bibleBooks)
-                Text(display ?? label) // Fixed: Handle nil return from displayString
+                let display = passages.displayString(bibleBooks: bibleBooks)
+                Text(display ?? label)
                     .foregroundColor((display?.isEmpty ?? true) ? .secondary : .primary)
                 Spacer()
                 Image(systemName: "chevron.up.chevron.down")

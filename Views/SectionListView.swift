@@ -13,6 +13,7 @@ struct SectionListView: View {
     @Query(sort: \JournalEntry.date, order: .reverse) private var allEntries: [JournalEntry]
     
     @StateObject var speakerStore = SpeakerStore()
+    @StateObject var tagStore = TagStore()
 
     @State private var addEntry: JournalEntry?
     @State private var showEditSheet = false
@@ -87,11 +88,11 @@ struct SectionListView: View {
     private func addEntrySheetView(for entry: JournalEntry) -> some View {
         switch JournalSection(rawValue: entry.section) {
         case .personalTime:
-            AddPersonalTimeView(entryToEdit: entry)
+            AddPersonalTimeView(entryToEdit: entry, tagStore: tagStore)
         case .sermonNotes:
-            AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore)
+            AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore, tagStore: tagStore)
         case .scriptureToMemorize, .prayerJournal, .groupNotes, .other, .none:
-            AddEntryView(entryToEdit: entry)
+            AddEntryView(entryToEdit: entry, tagStore: tagStore)
         }
     }
 }
