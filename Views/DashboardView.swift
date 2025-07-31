@@ -49,22 +49,31 @@ struct DashboardView: View {
         .groupNotes,
         .other
     ]
+    
+    private func sectionCardRow(for section: JournalSection) -> some View {
+        CardSectionView(
+            section: section,
+            prominent: true
+        ) {
+            path.append(.section(section))
+        }
+        .frame(height: 56)
+    }
+    
+    private var sectionCards: some View {
+        VStack(spacing: 40) {
+            ForEach(menuSections, id: \.self) { section in
+                sectionCardRow(for: section)
+            }
+        }
+    }
+
 
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
                 VStack(spacing: 0) {
-                    VStack(spacing: 40) {
-                        ForEach(menuSections, id: \.self) { section in
-                            CardSectionView(
-                                section: section,
-                                prominent: true
-                            ) {
-                                path.append(.section(section))
-                            }
-                            .frame(height: 56)
-                        }
-                    }
+                    sectionCards
                     .padding(.top, 32)
                     .padding(.horizontal, 20)
                     .padding(.bottom, 0)
