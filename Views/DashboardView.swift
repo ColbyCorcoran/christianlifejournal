@@ -31,6 +31,7 @@ struct DashboardView: View {
     @State private var searchText = ""
     @State private var showSettings = false
     @State private var settingsPage: SettingsPage = .main
+    @State private var isNewEntry: Bool = false
 
     @StateObject var speakerStore = SpeakerStore()
     @StateObject var tagStore = TagStore()
@@ -113,6 +114,7 @@ struct DashboardView: View {
                                     )
                                     modelContext.insert(newEntry)
                                     addEntry = newEntry
+                                    isNewEntry = true
                                 } label: {
                                     Text(section.rawValue)
                                 }

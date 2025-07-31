@@ -25,6 +25,7 @@ struct AddPersonalTimeView: View {
     @State private var showScripturePickerOverlay = false
     @State private var showTagPicker = false
     @State private var selectedTagIDs: Set<UUID> = []
+    @State private var isNewEntry: Bool = false
     
     let date: Date
 
@@ -78,7 +79,7 @@ struct AddPersonalTimeView: View {
                     if hasUnsavedChanges {
                         showLeaveAlert = true
                     } else {
-                        dismiss()
+                        handleCancel()
                     }
                 },
                 trailing: Button(entryToEdit == nil ? "Add" : "Save") {
@@ -111,7 +112,7 @@ struct AddPersonalTimeView: View {
             )
             .alert("Unsaved Changes", isPresented: $showLeaveAlert) {
                 Button("Discard Changes", role: .destructive) {
-                    dismiss()
+                    handleCancel()
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
@@ -279,6 +280,13 @@ struct AddPersonalTimeView: View {
     private var hasUnsavedChanges: Bool {
         // Implement your own logic to compare current state to original entry
         true // For demo purposes, always true
+    }
+    
+    private func handleCancel() {
+        if isNewEntry {
+            modelContext.delete(entryToEdit!)
+        }
+        dismiss()
     }
 }
 

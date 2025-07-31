@@ -29,6 +29,7 @@ struct AddSermonNotesView: View {
     @State private var passageToDelete: Int? = nil
     @State private var showTagPicker = false
     @State private var selectedTagIDs: Set<UUID> = []
+    @State private var isNewEntry: Bool = false
     let date: Date
 
     init(entryToEdit: JournalEntry? = nil, speakerStore: SpeakerStore, tagStore: TagStore) {
@@ -81,7 +82,7 @@ struct AddSermonNotesView: View {
                     if hasUnsavedChanges {
                         showLeaveAlert = true
                     } else {
-                        dismiss()
+                        handleCancel()
                     }
                 },
                 trailing: Button(entryToEdit == nil ? "Add" : "Save") {
@@ -117,7 +118,7 @@ struct AddSermonNotesView: View {
             )
             .alert("Unsaved Changes", isPresented: $showLeaveAlert) {
                 Button("Discard Changes", role: .destructive) {
-                    dismiss()
+                    handleCancel()
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
@@ -326,6 +327,13 @@ struct AddSermonNotesView: View {
     private var hasUnsavedChanges: Bool {
         // Implement your own logic to compare current state to original entry
         true // For demo purposes, always true
+    }
+    
+    private func handleCancel() {
+        if isNewEntry {
+            modelContext.delete(entryToEdit!)
+        }
+        dismiss()
     }
 }
 

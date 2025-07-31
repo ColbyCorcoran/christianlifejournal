@@ -170,6 +170,7 @@
 				B60C52692E05DFD700800EB8 /* JournalEntryDetailView.swift */,
 				B60C526D2E05E56800800EB8 /* CardSectionView.swift */,
 				B67127072E2186EE0097E590 /* SearchView.swift */,
+				B648ABCD2E3AD16D003FF91E /* FilterButton.swift */,
 				B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */,
 				B675A6D22E274ED000B5906D /* PassageRow.swift */,
 				B6AE9A302E2D541800940291 /* ScripturePickerOverlay.swift */,
@@ -178,7 +179,6 @@
 				B6AE9A342E3A6B9700940291 /* TagPickerOverlay.swift */,
 				B6E0622F2E2C570C00BF32DE /* SpeakerManagementView.swift */,
 				B6E062332E2C6CF200BF32DE /* SpeakerPickerOverlay.swift */,
-				B648ABCD2E3AD16D003FF91E /* FilterButton.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
