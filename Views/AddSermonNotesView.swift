@@ -11,6 +11,7 @@ import SwiftData
 struct AddSermonNotesView: View {
     @Environment(\.modelContext) private var modelContext
     var entryToEdit: JournalEntry? = nil
+    let section: JournalSection // Add section parameter
     @Environment(\.dismiss) private var dismiss
     
     @ObservedObject var speakerStore: SpeakerStore
@@ -29,13 +30,29 @@ struct AddSermonNotesView: View {
     @State private var passageToDelete: Int? = nil
     @State private var showTagPicker = false
     @State private var selectedTagIDs: Set<UUID> = []
-    @State private var isNewEntry: Bool = false
+    
+    // Remove isNewEntry since we're not using the old pattern anymore
+    
     let date: Date
 
-    init(entryToEdit: JournalEntry? = nil, speakerStore: SpeakerStore, tagStore: TagStore) {
+    private var currentSection: JournalSection {
+        if let entryToEdit = entryToEdit {
+            return JournalSection(rawValue: entryToEdit.section) ?? .sermonNotes
+        }
+        return section // Use the passed-in section for new entries
+    }
+
+    private var navigationTitle: String {
+        entryToEdit == nil ? "Add \(currentSection.displayName) Entry" : "Edit \(currentSection.displayName) Entry"
+    }
+
+    // Updated init to include section parameter with default
+    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .sermonNotes, speakerStore: SpeakerStore, tagStore: TagStore) {
         self.entryToEdit = entryToEdit
+        self.section = section
         self.speakerStore = speakerStore
         self.tagStore = tagStore
+        
         var initialPassages: [ScripturePassageSelection]
         if let entryToEdit, let stored = entryToEdit.scripture, !stored.isEmpty {
             initialPassages = stored.components(separatedBy: ";").compactMap { ref in
@@ -49,7 +66,7 @@ struct AddSermonNotesView: View {
                 let verseRange = chapterVerse.count > 1 ? chapterVerse[1].split(separator: "-").compactMap { Int($0) } : []
                 let verse = verseRange.first ?? 1
                 let verseEnd = verseRange.count > 1 ? verseRange.last! : verse
-                let bookIndex = bibleBooks.firstIndex(where: { $0.name == book }) ?? -1 // Changed from 0 to -1
+                let bookIndex = bibleBooks.firstIndex(where: { $0.name == book }) ?? -1
                 return ScripturePassageSelection(bookIndex: bookIndex, chapter: chapter, verse: verse, verseEnd: verseEnd)
             }
         } else {
@@ -58,10 +75,10 @@ struct AddSermonNotesView: View {
         }
         _passages = State(initialValue: initialPassages)
         _notes = State(initialValue: entryToEdit?.notes ?? "")
-//        _speaker = State(initialValue: entryToEdit?.speaker ?? "")
         _title = State(initialValue: entryToEdit?.title ?? "")
-        self.date = entryToEdit?.date ?? Date()
         _selectedSpeaker = State(initialValue: entryToEdit?.speaker ?? "")
+        _selectedTagIDs = State(initialValue: Set(entryToEdit?.tagIDs ?? []))
+        self.date = entryToEdit?.date ?? Date()
     }
 
     var body: some View {
@@ -75,14 +92,14 @@ struct AddSermonNotesView: View {
                 notesSection
             }
             .background(Color.appWhite)
-            .navigationTitle("Add Sermon Notes Entry")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
                 leading: Button("Cancel") {
                     if hasUnsavedChanges {
                         showLeaveAlert = true
                     } else {
-                        handleCancel()
+                        dismiss()
                     }
                 },
                 trailing: Button(entryToEdit == nil ? "Add" : "Save") {
@@ -95,30 +112,34 @@ struct AddSermonNotesView: View {
                     .joined(separator: "; ")
                     
                     if let entryToEdit = entryToEdit {
+                        // Editing existing entry
                         entryToEdit.title = title
                         entryToEdit.scripture = passagesString
                         entryToEdit.notes = notes
                         entryToEdit.speaker = selectedSpeaker
+                        entryToEdit.tagIDs = Array(selectedTagIDs)
                         try? modelContext.save()
                     } else {
+                        // Creating new entry - use the section parameter
                         let newEntry = JournalEntry(
-                            section: JournalSection.sermonNotes.rawValue,
+                            section: currentSection.rawValue,
                             title: title,
                             date: date,
                             scripture: passagesString,
                             notes: notes,
                             speaker: selectedSpeaker
                         )
+                        newEntry.tagIDs = Array(selectedTagIDs)
                         modelContext.insert(newEntry)
                     }
                     dismiss()
                 }
                 .disabled(title.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
-                          passages.allSatisfy { $0.bookIndex < 0 }) // Changed validation logic
+                          passages.allSatisfy { $0.bookIndex < 0 })
             )
             .alert("Unsaved Changes", isPresented: $showLeaveAlert) {
                 Button("Discard Changes", role: .destructive) {
-                    handleCancel()
+                    dismiss()
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
@@ -142,7 +163,6 @@ struct AddSermonNotesView: View {
                 Text("Are you sure you want to delete this Scripture passage?")
             }
             .overlay(
-                // Add the overlay here
                 ScripturePickerOverlay(
                     bibleBooks: bibleBooks,
                     isPresented: $isPickerPresented,
@@ -163,7 +183,6 @@ struct AddSermonNotesView: View {
                 .animation(.easeInOut(duration: 0.2), value: isPickerPresented)
             )
             .overlay(
-                // Add the overlay here
                 SpeakerPickerOverlay(
                     speakerStore: speakerStore,
                     isPresented: $showSpeakerPicker,
@@ -188,11 +207,6 @@ struct AddSermonNotesView: View {
 
     private var passageList: some View {
         VStack(alignment: .leading, spacing: 0) {
-//            Text(formattedDate(date))
-//                .font(.subheadline)
-//                .foregroundColor(.gray)
-//                .padding(.bottom, 8)
-
             ForEach(passages.indices, id: \.self) { idx in
                 passageRow(for: idx)
                     .padding(.bottom, 8)
@@ -325,21 +339,31 @@ struct AddSermonNotesView: View {
     }
 
     private var hasUnsavedChanges: Bool {
-        // Implement your own logic to compare current state to original entry
-        true // For demo purposes, always true
-    }
-    
-    private func handleCancel() {
-        if isNewEntry {
-            modelContext.delete(entryToEdit!)
+        let originalTitle = entryToEdit?.title ?? ""
+        let originalNotes = entryToEdit?.notes ?? ""
+        let originalSpeaker = entryToEdit?.speaker ?? ""
+        let originalTagIDs = Set(entryToEdit?.tagIDs ?? [])
+        
+        // Compare passages
+        let originalPassagesString = entryToEdit?.scripture ?? ""
+        let currentPassagesString = passages.compactMap { passage in
+            guard passage.bookIndex >= 0 else { return nil }
+            return passage.displayString(bibleBooks: bibleBooks)
         }
-        dismiss()
+        .filter { !$0.isEmpty }
+        .joined(separator: "; ")
+        
+        return title != originalTitle ||
+               notes != originalNotes ||
+               selectedSpeaker != originalSpeaker ||
+               selectedTagIDs != originalTagIDs ||
+               currentPassagesString != originalPassagesString
     }
 }
 
 struct AddSermonNotesView_Previews: PreviewProvider {
     static var previews: some View {
-        AddSermonNotesView(entryToEdit: nil, speakerStore: SpeakerStore(), tagStore: TagStore())
+        AddSermonNotesView(section: .sermonNotes, speakerStore: SpeakerStore(), tagStore: TagStore())
             .modelContainer(for: JournalEntry.self, inMemory: true)
     }
 }

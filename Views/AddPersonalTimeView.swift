@@ -11,6 +11,7 @@ import SwiftData
 struct AddPersonalTimeView: View {
     @Environment(\.modelContext) private var modelContext
     var entryToEdit: JournalEntry? = nil
+    let section: JournalSection // Add section parameter
     @Environment(\.dismiss) private var dismiss
     
     @ObservedObject var tagStore: TagStore
@@ -25,13 +26,28 @@ struct AddPersonalTimeView: View {
     @State private var showScripturePickerOverlay = false
     @State private var showTagPicker = false
     @State private var selectedTagIDs: Set<UUID> = []
-    @State private var isNewEntry: Bool = false
+    
+    // Remove isNewEntry since we're not using the old pattern anymore
     
     let date: Date
 
-    init(entryToEdit: JournalEntry? = nil, tagStore: TagStore) {
+    private var currentSection: JournalSection {
+        if let entryToEdit = entryToEdit {
+            return JournalSection(rawValue: entryToEdit.section) ?? .personalTime
+        }
+        return section // Use the passed-in section for new entries
+    }
+
+    private var navigationTitle: String {
+        entryToEdit == nil ? "Add \(currentSection.displayName) Entry" : "Edit \(currentSection.displayName) Entry"
+    }
+
+    // Updated init to include section parameter with default
+    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .personalTime, tagStore: TagStore) {
         self.entryToEdit = entryToEdit
+        self.section = section
         self.tagStore = tagStore
+        
         var initialPassages: [ScripturePassageSelection]
         if let entryToEdit, let stored = entryToEdit.scripture, !stored.isEmpty {
             initialPassages = stored.components(separatedBy: ";").compactMap { ref in
@@ -45,7 +61,7 @@ struct AddPersonalTimeView: View {
                 let verseRange = chapterVerse.count > 1 ? chapterVerse[1].split(separator: "-").compactMap { Int($0) } : []
                 let verse = verseRange.first ?? 1
                 let verseEnd = verseRange.count > 1 ? verseRange.last! : verse
-                let bookIndex = bibleBooks.firstIndex(where: { $0.name == book }) ?? -1 // Changed from 0 to -1
+                let bookIndex = bibleBooks.firstIndex(where: { $0.name == book }) ?? -1
                 return ScripturePassageSelection(bookIndex: bookIndex, chapter: chapter, verse: verse, verseEnd: verseEnd)
             }
         } else {
@@ -54,6 +70,7 @@ struct AddPersonalTimeView: View {
         }
         _passages = State(initialValue: initialPassages)
         _notes = State(initialValue: entryToEdit?.notes ?? "")
+        _selectedTagIDs = State(initialValue: Set(entryToEdit?.tagIDs ?? []))
         self.date = entryToEdit?.date ?? Date()
     }
 
@@ -68,18 +85,20 @@ struct AddPersonalTimeView: View {
                     .padding(.bottom, 8)
 
                 passageList
+                tagsSection
+                divider
                 notesSection
                 reflectionBox
             }
             .background(Color.appWhite)
-            .navigationTitle("Add Personal Time Entry")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .navigationBarItems(
                 leading: Button("Cancel") {
                     if hasUnsavedChanges {
                         showLeaveAlert = true
                     } else {
-                        handleCancel()
+                        dismiss()
                     }
                 },
                 trailing: Button(entryToEdit == nil ? "Add" : "Save") {
@@ -92,27 +111,31 @@ struct AddPersonalTimeView: View {
                     .joined(separator: "; ")
                     
                     if let entryToEdit = entryToEdit {
+                        // Editing existing entry
                         entryToEdit.title = ""
                         entryToEdit.scripture = passagesString
                         entryToEdit.notes = notes
+                        entryToEdit.tagIDs = Array(selectedTagIDs)
                         try? modelContext.save()
                     } else {
+                        // Creating new entry - use the section parameter
                         let newEntry = JournalEntry(
-                            section: JournalSection.personalTime.rawValue,
+                            section: currentSection.rawValue,
                             title: "",
                             date: date,
                             scripture: passagesString,
                             notes: notes
                         )
+                        newEntry.tagIDs = Array(selectedTagIDs)
                         modelContext.insert(newEntry)
                     }
                     dismiss()
                 }
-                .disabled(passages.allSatisfy { $0.bookIndex < 0 }) // Changed validation logic
+                .disabled(passages.allSatisfy { $0.bookIndex < 0 })
             )
             .alert("Unsaved Changes", isPresented: $showLeaveAlert) {
                 Button("Discard Changes", role: .destructive) {
-                    handleCancel()
+                    dismiss()
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
@@ -136,7 +159,6 @@ struct AddPersonalTimeView: View {
                 Text("Are you sure you want to delete this Scripture passage?")
             }
             .overlay(
-                // Add the overlay here
                 ScripturePickerOverlay(
                     bibleBooks: bibleBooks,
                     isPresented: $isPickerPresented,
@@ -171,9 +193,6 @@ struct AddPersonalTimeView: View {
                 passageRow(for: idx)
                     .padding(.bottom, 8)
             }
-            Divider()
-                .background(Color.appGreenDark)
-                .padding(.vertical, 8)
         }
         .padding(.horizontal)
     }
@@ -236,6 +255,13 @@ struct AddPersonalTimeView: View {
                 .padding(.bottom, 8)
                 .frame(width: UIScreen.main.bounds.width / 2)
     }
+    
+    private var divider: some View {
+        Divider()
+            .background(Color.appGreenDark)
+            .padding(.vertical, 8)
+            .padding(.horizontal)
+    }
 
     private var notesSection: some View {
         ZStack {
@@ -278,21 +304,27 @@ struct AddPersonalTimeView: View {
             }
 
     private var hasUnsavedChanges: Bool {
-        // Implement your own logic to compare current state to original entry
-        true // For demo purposes, always true
-    }
-    
-    private func handleCancel() {
-        if isNewEntry {
-            modelContext.delete(entryToEdit!)
+        let originalNotes = entryToEdit?.notes ?? ""
+        let originalTagIDs = Set(entryToEdit?.tagIDs ?? [])
+        
+        // Compare passages
+        let originalPassagesString = entryToEdit?.scripture ?? ""
+        let currentPassagesString = passages.compactMap { passage in
+            guard passage.bookIndex >= 0 else { return nil }
+            return passage.displayString(bibleBooks: bibleBooks)
         }
-        dismiss()
+        .filter { !$0.isEmpty }
+        .joined(separator: "; ")
+        
+        return notes != originalNotes ||
+               selectedTagIDs != originalTagIDs ||
+               currentPassagesString != originalPassagesString
     }
 }
 
 struct AddPersonalTimeView_Previews: PreviewProvider {
     static var previews: some View {
-        AddPersonalTimeView(tagStore: TagStore())
+        AddPersonalTimeView(section: .personalTime, tagStore: TagStore())
             .modelContainer(for: JournalEntry.self, inMemory: true)
     }
 }

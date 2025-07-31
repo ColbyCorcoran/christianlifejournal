@@ -8,6 +8,7 @@ import SwiftData
 struct AddEntryView: View {
     @Environment(\.modelContext) private var modelContext
     var entryToEdit: JournalEntry? = nil
+    let section: JournalSection // Add section parameter
     @Environment(\.dismiss) private var dismiss
     
     @ObservedObject var tagStore: TagStore
@@ -19,25 +20,28 @@ struct AddEntryView: View {
     let date: Date
     @State private var showTagPicker = false
     @State private var selectedTagIDs: Set<UUID> = []
-    @State private var isNewEntry: Bool = false
 
+    // Remove isNewEntry since we're not using the old pattern anymore
 
-    private var section: JournalSection {
+    private var currentSection: JournalSection {
         if let entryToEdit = entryToEdit {
             return JournalSection(rawValue: entryToEdit.section) ?? .other
         }
-        return .other
+        return section // Use the passed-in section for new entries
     }
 
     private var navigationTitle: String {
-        "Add \(section.displayName) Entry"
+        entryToEdit == nil ? "Add \(currentSection.displayName) Entry" : "Edit \(currentSection.displayName) Entry"
     }
 
-    init(entryToEdit: JournalEntry? = nil, tagStore: TagStore) {
+    // Updated init to include section parameter with default
+    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .other, tagStore: TagStore) {
         self.entryToEdit = entryToEdit
+        self.section = section
         self.tagStore = tagStore
         _notes = State(initialValue: entryToEdit?.notes ?? "")
         _title = State(initialValue: entryToEdit?.title ?? "")
+        _selectedTagIDs = State(initialValue: Set(entryToEdit?.tagIDs ?? []))
         self.date = entryToEdit?.date ?? Date()
     }
 
@@ -46,6 +50,7 @@ struct AddEntryView: View {
             VStack(alignment: .leading, spacing: 0) {
                 titleSection
                 tagsSection
+                divider
                 notesSection
             }
             .background(Color.appWhite)
@@ -56,22 +61,26 @@ struct AddEntryView: View {
                     if hasUnsavedChanges {
                         showLeaveAlert = true
                     } else {
-                        handleCancel()
+                        dismiss()
                     }
                 },
                 trailing: Button(entryToEdit == nil ? "Add" : "Save") {
                     if let entryToEdit = entryToEdit {
+                        // Editing existing entry
                         entryToEdit.title = title
                         entryToEdit.notes = notes
+                        entryToEdit.tagIDs = Array(selectedTagIDs)
                         try? modelContext.save()
                     } else {
+                        // Creating new entry - use the section parameter
                         let newEntry = JournalEntry(
-                            section: entryToEdit?.section ?? "",
+                            section: currentSection.rawValue,
                             title: title,
                             date: date,
                             scripture: "",
                             notes: notes
                         )
+                        newEntry.tagIDs = Array(selectedTagIDs)
                         modelContext.insert(newEntry)
                     }
                     dismiss()
@@ -80,7 +89,7 @@ struct AddEntryView: View {
             )
             .alert("Unsaved Changes", isPresented: $showLeaveAlert) {
                 Button("Discard Changes", role: .destructive) {
-                    handleCancel()
+                    dismiss()
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
@@ -149,13 +158,14 @@ struct AddEntryView: View {
                 .frame(width: UIScreen.main.bounds.width / 2)
     }
     
-
+    private var divider: some View {
+        Divider()
+            .background(Color.appGreenDark)
+            .padding(.vertical, 8)
+            .padding(.horizontal)
+    }
+    
     private var notesSection: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Divider()
-                .background(Color.appGreenDark)
-                .padding(.vertical, 8)
-
             ZStack {
                 Color.appWhite
                 TextEditor(text: $notes)
@@ -167,26 +177,22 @@ struct AddEntryView: View {
             .padding(.horizontal)
             .padding(.bottom, 12)
             .frame(maxHeight: .infinity)
-        }
-        .padding(.horizontal)
     }
 
     private var hasUnsavedChanges: Bool {
-        // Implement your own logic to compare current state to original entry
-        true // For demo purposes, always true
-    }
-    
-    private func handleCancel() {
-        if isNewEntry {
-            modelContext.delete(entryToEdit!)
-        }
-        dismiss()
+        let originalTitle = entryToEdit?.title ?? ""
+        let originalNotes = entryToEdit?.notes ?? ""
+        let originalTagIDs = Set(entryToEdit?.tagIDs ?? [])
+        
+        return title != originalTitle ||
+               notes != originalNotes ||
+               selectedTagIDs != originalTagIDs
     }
 }
 
 struct AddEntryView_Previews: PreviewProvider {
     static var previews: some View {
-        AddEntryView( tagStore: TagStore())
+        AddEntryView(section: .other, tagStore: TagStore())
             .modelContainer(for: JournalEntry.self, inMemory: true)
     }
 }

@@ -22,16 +22,23 @@ enum DashboardNav: Hashable {
     case entry(JournalEntry)
 }
 
+// Identifiable wrapper for reliable sheet presentation
+struct IdentifiableSection: Identifiable {
+    let id = UUID()
+    let section: JournalSection
+}
+
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.date, order: .reverse) private var allEntries: [JournalEntry]
-    @State private var addEntry: JournalEntry?
     @State private var path: [DashboardNav] = []
     @State private var showSearch = false
     @State private var searchText = ""
     @State private var showSettings = false
     @State private var settingsPage: SettingsPage = .main
-    @State private var isNewEntry: Bool = false
+    
+    // Better approach: Use identifiable wrapper for sheet presentation
+    @State private var presentedSection: IdentifiableSection?
 
     @StateObject var speakerStore = SpeakerStore()
     @StateObject var tagStore = TagStore()
@@ -69,7 +76,6 @@ struct DashboardView: View {
         }
     }
 
-
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
@@ -105,16 +111,8 @@ struct DashboardView: View {
                         Menu {
                             ForEach(menuSections.reversed(), id: \.self) { section in
                                 Button {
-                                    let newEntry = JournalEntry(
-                                        section: section.rawValue,
-                                        title: "",
-                                        date: Date(),
-                                        scripture: "",
-                                        notes: ""
-                                    )
-                                    modelContext.insert(newEntry)
-                                    addEntry = newEntry
-                                    isNewEntry = true
+                                    // Updated: Use identifiable wrapper for reliable sheet presentation
+                                    presentedSection = IdentifiableSection(section: section)
                                 } label: {
                                     Text(section.rawValue)
                                 }
@@ -173,8 +171,9 @@ struct DashboardView: View {
                     .zIndex(3)
                 }
             }
-            .sheet(item: $addEntry) { entry in
-                addEntrySheetView(for: entry)
+            // Updated: Use .sheet(item:) for more reliable presentation
+            .sheet(item: $presentedSection) { identifiableSection in
+                addEntrySheetView(for: identifiableSection.section)
             }
             .tint(Color.appGreenDark)
             .navigationTitle("Christian Life Journal")
@@ -201,15 +200,16 @@ struct DashboardView: View {
         .tint(Color.appGreenDark)
     }
 
+    // Updated: Take section parameter instead of entry, pass nil for entryToEdit
     @ViewBuilder
-    private func addEntrySheetView(for entry: JournalEntry) -> some View {
-        switch JournalSection(rawValue: entry.section) {
+    private func addEntrySheetView(for section: JournalSection) -> some View {
+        switch section {
         case .personalTime:
-            AddPersonalTimeView(entryToEdit: entry, tagStore: tagStore)
+            AddPersonalTimeView(entryToEdit: nil, section: section, tagStore: tagStore)
         case .sermonNotes:
-            AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore, tagStore: tagStore)
-        case .scriptureMemorization, .prayerJournal, .groupNotes, .other, .none:
-            AddEntryView(entryToEdit: entry, tagStore: tagStore)
+            AddSermonNotesView(entryToEdit: nil, section: section, speakerStore: speakerStore, tagStore: tagStore)
+        case .scriptureMemorization, .prayerJournal, .groupNotes, .other:
+            AddEntryView(entryToEdit: nil, section: section, tagStore: tagStore)
         }
     }
 }

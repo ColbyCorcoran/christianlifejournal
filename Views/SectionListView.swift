@@ -193,15 +193,18 @@ struct SectionListView: View {
         .scrollContentBackground(.hidden)
     }
 
+    // Update this method in your SectionListView
+    // Update this method in your SectionListView
     @ViewBuilder
     private func addEntrySheetView(entry: JournalEntry? = nil) -> some View {
         switch JournalSection(rawValue: entry?.section ?? section.rawValue) {
         case .personalTime:
-            AddPersonalTimeView(entryToEdit: entry, tagStore: tagStore)
+            AddPersonalTimeView(entryToEdit: entry, section: section, tagStore: tagStore)
         case .sermonNotes:
-            AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore, tagStore: tagStore)
+            AddSermonNotesView(entryToEdit: entry, section: section, speakerStore: speakerStore, tagStore: tagStore)
         case .scriptureMemorization, .prayerJournal, .groupNotes, .other, .none:
-            AddEntryView(entryToEdit: entry, tagStore: tagStore)
+            // Pass the section parameter for new entries
+            AddEntryView(entryToEdit: entry, section: section, tagStore: tagStore)
         }
     }
 }
