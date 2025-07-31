@@ -10,8 +10,8 @@ import SwiftUI
 struct TagPickerOverlay: View {
     @ObservedObject var tagStore: TagStore
     @Binding var isPresented: Bool
-    @Binding var selectedTags: Set<String> // Set of tag names
-    @State private var tempSelection: Set<String> = []
+    @Binding var selectedTagIDs: Set<UUID>
+    @State private var tempSelection: Set<UUID> = []
     @State private var newTag: String = ""
     
     private func dismissOverlay() {
@@ -39,7 +39,7 @@ struct TagPickerOverlay: View {
                         Spacer()
                         
                         Button(action: {
-                            selectedTags = tempSelection
+                            selectedTagIDs = tempSelection
                             isPresented = false
                         }) {
                             Image(systemName: "checkmark.circle.fill")
@@ -55,17 +55,17 @@ struct TagPickerOverlay: View {
                         HStack {
                             Text(tag.name)
                             Spacer()
-                            if tempSelection.contains(tag.name) {
+                            if tempSelection.contains(tag.id) {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.appGreenDark)
                             }
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            if tempSelection.contains(tag.name) {
-                                tempSelection.remove(tag.name)
+                            if tempSelection.contains(tag.id) {
+                                tempSelection.remove(tag.id)
                             } else {
-                                tempSelection.insert(tag.name)
+                                tempSelection.insert(tag.id)
                             }
                         }
                     }
@@ -82,9 +82,10 @@ struct TagPickerOverlay: View {
                     Button("Create") {
                         let trimmed = newTag.trimmingCharacters(in: .whitespaces)
                         if !trimmed.isEmpty && !tagStore.userTags.contains(where: { $0.name.caseInsensitiveCompare(trimmed) == .orderedSame }) {
-                            tagStore.addUserTag(trimmed)
-                            tempSelection.insert(trimmed)
-                            newTag = ""
+                            let newTagObj = Tag(name: trimmed, type: .user)
+                                                        tagStore.tags.append(newTagObj)
+                                                        tempSelection.insert(newTagObj.id)
+                                                        newTag = ""
                         }
                     }
                     .buttonStyle(.borderedProminent)
@@ -101,7 +102,7 @@ struct TagPickerOverlay: View {
                     .shadow(color: .black.opacity(0.08), radius: 16, x: 0, y: 8)
             )
             .onAppear {
-                tempSelection = selectedTags
+                tempSelection = selectedTagIDs
             }
         }
     }
@@ -112,7 +113,7 @@ struct TagPickerOverlay_Previews: PreviewProvider {
         TagPickerOverlay(
             tagStore: TagStore(),
             isPresented: .constant(true),
-            selectedTags: .constant(["Prayer"])
+            selectedTagIDs: .constant([])
         )
     }
 }

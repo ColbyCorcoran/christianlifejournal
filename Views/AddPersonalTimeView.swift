@@ -24,7 +24,7 @@ struct AddPersonalTimeView: View {
     @State private var passageToDelete: Int? = nil
     @State private var showScripturePickerOverlay = false
     @State private var showTagPicker = false
-    @State private var selectedTags: Set<String> = []
+    @State private var selectedTagIDs: Set<UUID> = []
     
     let date: Date
 
@@ -155,6 +155,10 @@ struct AddPersonalTimeView: View {
                 .opacity(isPickerPresented ? 1 : 0)
                 .animation(.easeInOut(duration: 0.2), value: isPickerPresented)
             )
+            .overlay(TagPickerOverlay(tagStore: tagStore, isPresented: $showTagPicker, selectedTagIDs: $selectedTagIDs)
+            .opacity(showTagPicker ? 1: 0)
+            .animation(.easeInOut(duration: 0.2), value: showTagPicker)
+            )
             .tint(Color.appGreenDark)
         }
         .tint(Color.appGreenDark)
@@ -208,7 +212,7 @@ struct AddPersonalTimeView: View {
     private var tagsSection: some View {
         Button(action: { showTagPicker = true }) {
                     HStack {
-                        if selectedTags.isEmpty {
+                        if selectedTagIDs.isEmpty {
                             Text("Add Tags")
                                 .foregroundColor(.secondary)
                         } else {
@@ -223,7 +227,7 @@ struct AddPersonalTimeView: View {
                     .padding(8)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(selectedTags.isEmpty ? Color.appGreenPale : Color.appGreenLight)
+                            .fill(selectedTagIDs.isEmpty ? Color.appGreenPale : Color.appGreenLight)
                     )
                 }
                 .buttonStyle(PlainButtonStyle())

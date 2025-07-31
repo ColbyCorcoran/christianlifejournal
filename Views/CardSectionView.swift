@@ -16,7 +16,7 @@ struct CardSectionView: View {
     private var accentColor: Color {
         switch section {
         case .personalTime:         return .appGreenDark
-        case .scriptureToMemorize:  return .appGreen
+        case .scriptureMemorization:  return .appGreen
         case .prayerJournal:        return .appGreenMedium
         case .sermonNotes:          return .appGreenMid
         case .groupNotes:           return .appGreenLight

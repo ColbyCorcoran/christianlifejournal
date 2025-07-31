@@ -91,7 +91,7 @@ struct SectionListView: View {
             AddPersonalTimeView(entryToEdit: entry, tagStore: tagStore)
         case .sermonNotes:
             AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore, tagStore: tagStore)
-        case .scriptureToMemorize, .prayerJournal, .groupNotes, .other, .none:
+        case .scriptureMemorization, .prayerJournal, .groupNotes, .other, .none:
             AddEntryView(entryToEdit: entry, tagStore: tagStore)
         }
     }

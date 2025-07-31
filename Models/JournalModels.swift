@@ -20,6 +20,7 @@ final class JournalEntry {
     var scripture: String?
     var notes: String?
     var speaker: String?
+    var tagIDs: [UUID] = [] // Store the IDs of assigned tags
 
     init(
         id: UUID = UUID(),
@@ -29,7 +30,8 @@ final class JournalEntry {
         bodyText: String? = nil,
         scripture: String? = nil,
         notes: String? = nil,
-        speaker: String? = nil
+        speaker: String? = nil,
+        tagIDs: [UUID] = []
     ) {
         self.id = id
         self.section = section
@@ -39,6 +41,7 @@ final class JournalEntry {
         self.scripture = scripture
         self.notes = notes
         self.speaker = speaker
+        self.tagIDs = tagIDs
     }
 }
 

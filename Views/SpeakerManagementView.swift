@@ -26,7 +26,7 @@ struct SpeakerManagementView: View {
                 Spacer()
             }
             .padding(.top, 8)
-            Text("Speaker Management")
+            Text("\(Image(systemName: "person.2")) Speaker Management")
                 .font(.headline)
                 .padding(.bottom, 8)
 

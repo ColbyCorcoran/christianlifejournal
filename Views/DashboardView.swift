@@ -17,22 +17,33 @@ enum SettingsPage {
     case scriptureMemorization
 }
 
+enum DashboardNav: Hashable {
+    case section(JournalSection)
+    case entry(JournalEntry)
+}
+
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.date, order: .reverse) private var allEntries: [JournalEntry]
     @State private var addEntry: JournalEntry?
-    @State private var path: [JournalEntry] = []
+    @State private var path: [DashboardNav] = []
     @State private var showSearch = false
     @State private var searchText = ""
     @State private var showSettings = false
     @State private var settingsPage: SettingsPage = .main
+
     @StateObject var speakerStore = SpeakerStore()
     @StateObject var tagStore = TagStore()
 
+    // Search filter state
+    @State private var selectedTagIDs: Set<UUID> = []
+    @State private var selectedBooks: Set<String> = []
+    @State private var selectedSections: Set<String> = []
+    @State private var selectedSpeakers: Set<String> = []
 
     private let menuSections: [JournalSection] = [
         .personalTime,
-        .scriptureToMemorize,
+        .scriptureMemorization,
         .prayerJournal,
         .sermonNotes,
         .groupNotes,
@@ -49,7 +60,7 @@ struct DashboardView: View {
                                 section: section,
                                 prominent: true
                             ) {
-                                path.append(JournalEntry(section: section.rawValue, title: "", date: Date(), scripture: "", notes: ""))
+                                path.append(.section(section))
                             }
                             .frame(height: 56)
                         }
@@ -68,7 +79,7 @@ struct DashboardView: View {
                             HStack {
                                 Image(systemName: "magnifyingglass")
                                     .foregroundColor(.appGreenDark)
-                                Text("Search journal...")
+                                Text("Search entries...")
                                     .foregroundColor(.appGreenDark.opacity(0.7))
                                     .font(.body)
                                 Spacer()
@@ -122,25 +133,48 @@ struct DashboardView: View {
                     SettingsMenuView(
                         isPresented: $showSettings,
                         settingsPage: $settingsPage,
-                        speakerStore: speakerStore, tagStore: tagStore
+                        speakerStore: speakerStore,
+                        tagStore: tagStore
                     )
                     .frame(maxWidth: 340)
                     .transition(.scale)
                     .zIndex(2)
                 }
 
+                // Centered overlay search view
+                if showSearch {
+                    Color.black.opacity(0.2)
+                        .ignoresSafeArea()
+                        .onTapGesture { showSearch = false }
+
+                    SearchView(
+                        searchText: $searchText,
+                        allEntries: allEntries,
+                        showSearch: $showSearch,
+                        tagStore: tagStore,
+                        speakerStore: speakerStore,
+                        selectedTagIDs: $selectedTagIDs,
+                        selectedBooks: $selectedBooks,
+                        selectedSections: $selectedSections,
+                        selectedSpeakers: $selectedSpeakers
+                    )
+                    .frame(maxWidth: 400, maxHeight: .infinity)
+                    .zIndex(3)
+                }
             }
             .sheet(item: $addEntry) { entry in
                 addEntrySheetView(for: entry)
             }
-            .fullScreenCover(isPresented: $showSearch) {
-                SearchView(searchText: $searchText, allEntries: allEntries, showSearch: $showSearch)
-            }
             .tint(Color.appGreenDark)
             .navigationTitle("Christian Life Journal")
             .navigationBarTitleDisplayMode(.inline)
-            .navigationDestination(for: JournalEntry.self) { entry in
-                SectionListView(section: JournalSection(rawValue: entry.section) ?? .other)
+            .navigationDestination(for: DashboardNav.self) { nav in
+                switch nav {
+                case .section(let section):
+                    SectionListView(section: section)
+                case .entry(let entry):
+                    JournalEntryDetailView(entry: entry)
+                }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
@@ -163,7 +197,7 @@ struct DashboardView: View {
             AddPersonalTimeView(entryToEdit: entry, tagStore: tagStore)
         case .sermonNotes:
             AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore, tagStore: tagStore)
-        case .scriptureToMemorize, .prayerJournal, .groupNotes, .other, .none:
+        case .scriptureMemorization, .prayerJournal, .groupNotes, .other, .none:
             AddEntryView(entryToEdit: entry, tagStore: tagStore)
         }
     }

@@ -77,7 +77,7 @@ struct AddScriptureToMemorizeView: View {
                         try? modelContext.save()
                     } else {
                         let newEntry = JournalEntry(
-                            section: JournalSection.scriptureToMemorize.rawValue,
+                            section: JournalSection.scriptureMemorization.rawValue,
                             title: title,
                             date: date,
                             scripture: scripture,

@@ -75,6 +75,10 @@ class TagStore: ObservableObject {
     var defaultTags: [Tag] {
         tags.filter { $0.type == .default }
     }
+    
+    func tag(for id: UUID) -> Tag? {
+            tags.first { $0.id == id }
+        }
 
     func tag(for name: String) -> Tag? {
         tags.first { $0.name.caseInsensitiveCompare(name) == .orderedSame }

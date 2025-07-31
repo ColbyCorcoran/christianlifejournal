@@ -26,8 +26,11 @@ struct TagManagementView: View {
                 Spacer()
             }
             .padding(.top, 8)
-            Text("Tag Management")
+            Text("\(Image(systemName: "tag.circle")) Tag Management")
                 .font(.headline)
+            
+            Text("Our app uses default, auto-applied tags for each book of the Bible and each app section. These tags will only display as a filter in search. The list below will only display the tags that you create.")
+                .font(.caption2)
                 .padding(.bottom, 8)
 
             List {
@@ -87,7 +90,7 @@ struct TagManagementView: View {
             Spacer()
         }
         .padding()
-        .frame(width: 340, height: 420)
+        .frame(width: 340, height: 480)
         .background(
             RoundedRectangle(cornerRadius: 24)
                 .fill(Color.appWhite)

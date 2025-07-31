@@ -28,7 +28,7 @@ struct AddSermonNotesView: View {
     @State private var showLeaveAlert = false
     @State private var passageToDelete: Int? = nil
     @State private var showTagPicker = false
-    @State private var selectedTags: Set<String> = []
+    @State private var selectedTagIDs: Set<UUID> = []
     let date: Date
 
     init(entryToEdit: JournalEntry? = nil, speakerStore: SpeakerStore, tagStore: TagStore) {
@@ -68,11 +68,8 @@ struct AddSermonNotesView: View {
             VStack(alignment: .leading, spacing: 0) {
                 titleSection
                 passageList
-//                HStack {
-//                    speakerSection
-//                    
-//                    tagsSection
-//                }
+                speakerSection
+                tagsSection
                 divider
                 notesSection
             }
@@ -173,6 +170,10 @@ struct AddSermonNotesView: View {
                 )
                 .opacity(showSpeakerPicker ? 1 : 0)
                 .animation(.easeInOut(duration: 0.2), value: showSpeakerPicker)
+            )
+            .overlay(TagPickerOverlay(tagStore: tagStore, isPresented: $showTagPicker, selectedTagIDs: $selectedTagIDs)
+            .opacity(showTagPicker ? 1: 0)
+            .animation(.easeInOut(duration: 0.2), value: showTagPicker)
             )
             .tint(Color.appGreenDark)
             .onAppear {
@@ -281,7 +282,7 @@ struct AddSermonNotesView: View {
     private var tagsSection: some View {
         Button(action: { showTagPicker = true }) {
                     HStack {
-                        if selectedTags.isEmpty {
+                        if selectedTagIDs.isEmpty {
                             Text("Add Tags")
                                 .foregroundColor(.secondary)
                         } else {
@@ -296,7 +297,7 @@ struct AddSermonNotesView: View {
                     .padding(8)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(selectedTags.isEmpty ? Color.appGreenPale : Color.appGreenLight)
+                            .fill(selectedTagIDs.isEmpty ? Color.appGreenPale : Color.appGreenLight)
                     )
                 }
                 .buttonStyle(PlainButtonStyle())

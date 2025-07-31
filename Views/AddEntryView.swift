@@ -18,7 +18,7 @@ struct AddEntryView: View {
     @State private var showLeaveAlert = false
     let date: Date
     @State private var showTagPicker = false
-    @State private var selectedTags: Set<String> = []
+    @State private var selectedTagIDs: Set<UUID> = []
 
     private var section: JournalSection {
         if let entryToEdit = entryToEdit {
@@ -84,7 +84,7 @@ struct AddEntryView: View {
             } message: {
                 Text("You have unsaved changes. Are you sure you want to leave without saving?")
             }
-            .overlay(TagPickerOverlay(tagStore: tagStore, isPresented: $showTagPicker, selectedTags: $selectedTags)
+            .overlay(TagPickerOverlay(tagStore: tagStore, isPresented: $showTagPicker, selectedTagIDs: $selectedTagIDs)
             .opacity(showTagPicker ? 1: 0)
             .animation(.easeInOut(duration: 0.2), value: showTagPicker)
             )
@@ -123,7 +123,7 @@ struct AddEntryView: View {
     private var tagsSection: some View {
         Button(action: { showTagPicker = true }) {
                     HStack {
-                        if selectedTags.isEmpty {
+                        if selectedTagIDs.isEmpty {
                             Text("Add Tags")
                                 .foregroundColor(.secondary)
                         } else {
@@ -138,7 +138,7 @@ struct AddEntryView: View {
                     .padding(8)
                     .background(
                         RoundedRectangle(cornerRadius: 8)
-                            .fill(selectedTags.isEmpty ? Color.appGreenPale : Color.appGreenLight)
+                            .fill(selectedTagIDs.isEmpty ? Color.appGreenPale : Color.appGreenLight)
                     )
                 }
                 .buttonStyle(PlainButtonStyle())

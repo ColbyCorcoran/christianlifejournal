@@ -168,7 +168,7 @@ struct SettingsMenuView: View {
                     }
                     .padding(.top, 8)
                     
-                    Text("Scripture Memorization System")
+                    Text("\(Image(systemName: "switch.2")) Scripture Memorization System")
                         .font(.headline)
                         .padding(.bottom, 8)
                     Text("Our app utilizes a three-phase memorization system and will guide you through each of the 3 phases for each verse you choose to memorize. If you do not wish to use this system, and instead want the 'Scripture Memorization' section of this app to simply be flashcards, turn this toggle off. This will change the way the section will function and look.")
