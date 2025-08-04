@@ -10,8 +10,8 @@ import SwiftUI
 struct SettingsMenuView: View {
     @Binding var isPresented: Bool
     @Binding var settingsPage: SettingsPage
-    @ObservedObject var speakerStore: SpeakerStore
-    @ObservedObject var tagStore: TagStore
+    @EnvironmentObject var speakerStore: SpeakerStore
+    @EnvironmentObject var tagStore: TagStore
     let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
     let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
 
@@ -151,7 +151,7 @@ struct SettingsMenuView: View {
                 }
 
             case .tagManagement:
-                TagManagementView(settingsPage: $settingsPage, tagStore: tagStore)
+                TagManagementView(settingsPage: $settingsPage)
 
             case .speakerManagement:
                 SpeakerManagementView(settingsPage: $settingsPage, speakerStore: speakerStore)
@@ -195,6 +195,7 @@ struct SettingsMenuView: View {
 
 struct SettingsMenuView_Previews: PreviewProvider {
     static var previews: some View {
-        SettingsMenuView(isPresented: .constant(true), settingsPage: .constant(.main), speakerStore: SpeakerStore(), tagStore: TagStore())
+        SettingsMenuView(isPresented: .constant(true), settingsPage: .constant(.main))
+            .environmentObject(SpeakerStore())
     }
 }

@@ -14,7 +14,7 @@ struct AddPersonalTimeView: View {
     let section: JournalSection // Add section parameter
     @Environment(\.dismiss) private var dismiss
     
-    @ObservedObject var tagStore: TagStore
+    @EnvironmentObject var tagStore: TagStore
 
     @State private var passages: [ScripturePassageSelection] = [ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)]
     
@@ -43,10 +43,10 @@ struct AddPersonalTimeView: View {
     }
 
     // Updated init to include section parameter with default
-    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .personalTime, tagStore: TagStore) {
+    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .personalTime) {
         self.entryToEdit = entryToEdit
         self.section = section
-        self.tagStore = tagStore
+        
         
         var initialPassages: [ScripturePassageSelection]
         if let entryToEdit, let stored = entryToEdit.scripture, !stored.isEmpty {
@@ -178,7 +178,7 @@ struct AddPersonalTimeView: View {
                 .opacity(isPickerPresented ? 1 : 0)
                 .animation(.easeInOut(duration: 0.2), value: isPickerPresented)
             )
-            .overlay(TagPickerOverlay(tagStore: tagStore, isPresented: $showTagPicker, selectedTagIDs: $selectedTagIDs)
+            .overlay(TagPickerOverlay(isPresented: $showTagPicker, selectedTagIDs: $selectedTagIDs)
             .opacity(showTagPicker ? 1: 0)
             .animation(.easeInOut(duration: 0.2), value: showTagPicker)
             )
@@ -324,7 +324,8 @@ struct AddPersonalTimeView: View {
 
 struct AddPersonalTimeView_Previews: PreviewProvider {
     static var previews: some View {
-        AddPersonalTimeView(section: .personalTime, tagStore: TagStore())
+        AddPersonalTimeView(section: .personalTime)
+            .environmentObject(TagStore())
             .modelContainer(for: JournalEntry.self, inMemory: true)
     }
 }

@@ -19,7 +19,7 @@ enum SettingsPage {
 
 enum DashboardNav: Hashable {
     case section(JournalSection)
-    case entry(JournalEntry)
+    case entry(UUID) // Use UUID instead of JournalEntry
 }
 
 // Identifiable wrapper for reliable sheet presentation
@@ -37,11 +37,10 @@ struct DashboardView: View {
     @State private var showSettings = false
     @State private var settingsPage: SettingsPage = .main
     
-    // Better approach: Use identifiable wrapper for sheet presentation
     @State private var presentedSection: IdentifiableSection?
 
-    @StateObject var speakerStore = SpeakerStore()
-    @StateObject var tagStore = TagStore()
+    @EnvironmentObject var speakerStore: SpeakerStore
+    @EnvironmentObject var tagStore: TagStore
 
     // Search filter state
     @State private var selectedTagIDs: Set<UUID> = []
@@ -58,36 +57,20 @@ struct DashboardView: View {
         .other
     ]
     
-    private func sectionCardRow(for section: JournalSection) -> some View {
-        CardSectionView(
-            section: section,
-            prominent: true
-        ) {
-            path.append(.section(section))
-        }
-        .frame(height: 56)
-    }
+    @State private var navigationKey = UUID() // Add this to force NavigationStack recreation
     
-    private var sectionCards: some View {
-        VStack(spacing: 40) {
-            ForEach(menuSections, id: \.self) { section in
-                sectionCardRow(for: section)
-            }
-        }
-    }
-
     var body: some View {
         NavigationStack(path: $path) {
             ZStack {
                 VStack(spacing: 0) {
                     sectionCards
-                    .padding(.top, 32)
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 0)
+                        .padding(.top, 32)
+                        .padding(.horizontal, 20)
+                        .padding(.bottom, 0)
 
                     Spacer(minLength: 0)
 
-                    // Search bar and quick add button inline at the bottom
+                    // Search bar and quick add button
                     HStack(spacing: 12) {
                         Button(action: {
                             showSearch = true
@@ -111,7 +94,8 @@ struct DashboardView: View {
                         Menu {
                             ForEach(menuSections.reversed(), id: \.self) { section in
                                 Button {
-                                    // Updated: Use identifiable wrapper for reliable sheet presentation
+                                    // CRITICAL: Clear path before presenting sheet
+                                    path.removeAll()
                                     presentedSection = IdentifiableSection(section: section)
                                 } label: {
                                     Text(section.rawValue)
@@ -133,47 +117,46 @@ struct DashboardView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .background(Color.appWhite.ignoresSafeArea())
 
-                // Centered overlay settings menu
+                // Settings overlay
                 if showSettings {
                     Color.black.opacity(0.2)
                         .ignoresSafeArea()
-                        .onTapGesture { showSettings = false; settingsPage = .main }
+                        .onTapGesture {
+                            path.removeAll()
+                            showSettings = false
+                            settingsPage = .main
+                        }
 
                     SettingsMenuView(
                         isPresented: $showSettings,
-                        settingsPage: $settingsPage,
-                        speakerStore: speakerStore,
-                        tagStore: tagStore
+                        settingsPage: $settingsPage
                     )
+                    .environmentObject(tagStore)
+                    .environmentObject(speakerStore)
                     .frame(maxWidth: 340)
                     .transition(.scale)
                     .zIndex(2)
                 }
 
-                // Centered overlay search view
-                if showSearch {
-                    Color.black.opacity(0.2)
-                        .ignoresSafeArea()
-                        .onTapGesture { showSearch = false }
-
-                    SearchView(
-                        searchText: $searchText,
-                        allEntries: allEntries,
-                        showSearch: $showSearch,
-                        tagStore: tagStore,
-                        speakerStore: speakerStore,
-                        selectedTagIDs: $selectedTagIDs,
-                        selectedBooks: $selectedBooks,
-                        selectedSections: $selectedSections,
-                        selectedSpeakers: $selectedSpeakers
-                    )
-                    .frame(maxWidth: 400, maxHeight: .infinity)
-                    .zIndex(3)
-                }
+                // Search as fullScreenCover instead of overlay
+                // REMOVED: Search overlay code
             }
-            // Updated: Use .sheet(item:) for more reliable presentation
             .sheet(item: $presentedSection) { identifiableSection in
                 addEntrySheetView(for: identifiableSection.section)
+            }
+            .sheet(isPresented: $showSearch) {
+                SearchView(
+                    searchText: $searchText,
+                    allEntries: allEntries,
+                    showSearch: $showSearch,
+                    selectedTagIDs: $selectedTagIDs,
+                    selectedBooks: $selectedBooks,
+                    selectedSections: $selectedSections,
+                    selectedSpeakers: $selectedSpeakers
+                )
+                .environmentObject(tagStore)
+                .environmentObject(speakerStore)
+                .interactiveDismissDisabled() // Prevent accidental dismissal
             }
             .tint(Color.appGreenDark)
             .navigationTitle("Christian Life Journal")
@@ -182,13 +165,26 @@ struct DashboardView: View {
                 switch nav {
                 case .section(let section):
                     SectionListView(section: section)
-                case .entry(let entry):
-                    JournalEntryDetailView(entry: entry)
+                        .environmentObject(tagStore)
+                        .environmentObject(speakerStore)
+                case .entry(let entryUUID):
+                    // Find the entry by UUID
+                    if let entry = allEntries.first(where: { $0.id == entryUUID }) {
+                        JournalEntryDetailView(entry: entry)
+                            .environmentObject(tagStore)
+                            .environmentObject(speakerStore)
+                    } else {
+                        // Fallback view if entry not found
+                        ContentUnavailableView("Entry Not Found", systemImage: "doc.text")
+                    }
                 }
             }
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button(action: { showSettings = true }) {
+                    Button(action: {
+                        path.removeAll()
+                        showSettings = true
+                    }) {
                         Image(systemName: "gearshape.fill")
                             .font(.title2)
                             .foregroundColor(.appGreenDark)
@@ -196,20 +192,50 @@ struct DashboardView: View {
                     .accessibilityLabel("Settings")
                 }
             }
+            // Simplified onChange - no need for complex path clearing since search is now fullScreenCover
+            .onAppear {
+                path.removeAll()
+            }
         }
+        .id(navigationKey) // Force NavigationStack recreation
         .tint(Color.appGreenDark)
     }
+    
+    private var sectionCards: some View {
+        VStack(spacing: 40) {
+            ForEach(menuSections, id: \.self) { section in
+                sectionCardRow(for: section)
+            }
+        }
+    }
+    
+    private func sectionCardRow(for section: JournalSection) -> some View {
+        CardSectionView(
+            section: section,
+            prominent: true
+        ) {
+            // CRITICAL: Ensure path is clear before navigation
+            path.removeAll()
+            DispatchQueue.main.async {
+                path.append(.section(section))
+            }
+        }
+        .frame(height: 56)
+    }
 
-    // Updated: Take section parameter instead of entry, pass nil for entryToEdit
     @ViewBuilder
     private func addEntrySheetView(for section: JournalSection) -> some View {
         switch section {
         case .personalTime:
-            AddPersonalTimeView(entryToEdit: nil, section: section, tagStore: tagStore)
+            AddPersonalTimeView(entryToEdit: nil, section: section)
+                .environmentObject(tagStore)
         case .sermonNotes:
-            AddSermonNotesView(entryToEdit: nil, section: section, speakerStore: speakerStore, tagStore: tagStore)
+            AddSermonNotesView(entryToEdit: nil, section: section)
+                .environmentObject(tagStore)
+                .environmentObject(speakerStore)
         case .scriptureMemorization, .prayerJournal, .groupNotes, .other:
-            AddEntryView(entryToEdit: nil, section: section, tagStore: tagStore)
+            AddEntryView(entryToEdit: nil, section: section)
+                .environmentObject(tagStore)
         }
     }
 }
@@ -217,6 +243,8 @@ struct DashboardView: View {
 struct DashboardView_Previews: PreviewProvider {
     static var previews: some View {
         DashboardView()
+            .environmentObject(TagStore())
+            .environmentObject(SpeakerStore())
             .modelContainer(for: JournalEntry.self, inMemory: true)
     }
 }

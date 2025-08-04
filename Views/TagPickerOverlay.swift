@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct TagPickerOverlay: View {
-    @ObservedObject var tagStore: TagStore
+    @EnvironmentObject var tagStore: TagStore
     @Binding var isPresented: Bool
     @Binding var selectedTagIDs: Set<UUID>
     @State private var tempSelection: Set<UUID> = []
@@ -82,10 +82,14 @@ struct TagPickerOverlay: View {
                     Button("Create") {
                         let trimmed = newTag.trimmingCharacters(in: .whitespaces)
                         if !trimmed.isEmpty && !tagStore.userTags.contains(where: { $0.name.caseInsensitiveCompare(trimmed) == .orderedSame }) {
-                            let newTagObj = Tag(name: trimmed, type: .user)
-                                                        tagStore.tags.append(newTagObj)
-                                                        tempSelection.insert(newTagObj.id)
-                                                        newTag = ""
+                            // FIXED: Use the TagStore method instead of directly manipulating the array
+                            tagStore.addUserTag(trimmed)
+                            
+                            // Find the newly created tag and add it to selection
+                            if let newTagObj = tagStore.userTags.first(where: { $0.name.caseInsensitiveCompare(trimmed) == .orderedSame }) {
+                                tempSelection.insert(newTagObj.id)
+                            }
+                            newTag = ""
                         }
                     }
                     .buttonStyle(.borderedProminent)
@@ -111,9 +115,9 @@ struct TagPickerOverlay: View {
 struct TagPickerOverlay_Previews: PreviewProvider {
     static var previews: some View {
         TagPickerOverlay(
-            tagStore: TagStore(),
             isPresented: .constant(true),
             selectedTagIDs: .constant([])
         )
+        .environmentObject(TagStore()) // Add this line
     }
 }

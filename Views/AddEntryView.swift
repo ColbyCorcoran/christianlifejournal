@@ -1,17 +1,15 @@
 // AddEntryView.swift
 
-// AddEntryView.swift
-
 import SwiftUI
 import SwiftData
 
 struct AddEntryView: View {
     @Environment(\.modelContext) private var modelContext
     var entryToEdit: JournalEntry? = nil
-    let section: JournalSection // Add section parameter
+    let section: JournalSection
     @Environment(\.dismiss) private var dismiss
     
-    @ObservedObject var tagStore: TagStore
+    @EnvironmentObject var tagStore: TagStore
 
     @State private var title: String = ""
     @FocusState private var isTitleFocused: Bool
@@ -21,24 +19,21 @@ struct AddEntryView: View {
     @State private var showTagPicker = false
     @State private var selectedTagIDs: Set<UUID> = []
 
-    // Remove isNewEntry since we're not using the old pattern anymore
-
     private var currentSection: JournalSection {
         if let entryToEdit = entryToEdit {
             return JournalSection(rawValue: entryToEdit.section) ?? .other
         }
-        return section // Use the passed-in section for new entries
+        return section
     }
 
     private var navigationTitle: String {
         entryToEdit == nil ? "Add \(currentSection.displayName) Entry" : "Edit \(currentSection.displayName) Entry"
     }
 
-    // Updated init to include section parameter with default
-    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .other, tagStore: TagStore) {
+    // FIXED: Remove tagStore parameter since we're using @EnvironmentObject
+    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .other) {
         self.entryToEdit = entryToEdit
         self.section = section
-        self.tagStore = tagStore
         _notes = State(initialValue: entryToEdit?.notes ?? "")
         _title = State(initialValue: entryToEdit?.title ?? "")
         _selectedTagIDs = State(initialValue: Set(entryToEdit?.tagIDs ?? []))
@@ -72,7 +67,7 @@ struct AddEntryView: View {
                         entryToEdit.tagIDs = Array(selectedTagIDs)
                         try? modelContext.save()
                     } else {
-                        // Creating new entry - use the section parameter
+                        // Creating new entry
                         let newEntry = JournalEntry(
                             section: currentSection.rawValue,
                             title: title,
@@ -95,9 +90,14 @@ struct AddEntryView: View {
             } message: {
                 Text("You have unsaved changes. Are you sure you want to leave without saving?")
             }
-            .overlay(TagPickerOverlay(tagStore: tagStore, isPresented: $showTagPicker, selectedTagIDs: $selectedTagIDs)
-            .opacity(showTagPicker ? 1: 0)
-            .animation(.easeInOut(duration: 0.2), value: showTagPicker)
+            // FIXED: Remove tagStore parameter since TagPickerOverlay now uses @EnvironmentObject
+            .overlay(
+                TagPickerOverlay(
+                    isPresented: $showTagPicker,
+                    selectedTagIDs: $selectedTagIDs
+                )
+                .opacity(showTagPicker ? 1: 0)
+                .animation(.easeInOut(duration: 0.2), value: showTagPicker)
             )
             .tint(Color.appGreenDark)
             .onAppear {
@@ -133,29 +133,29 @@ struct AddEntryView: View {
     
     private var tagsSection: some View {
         Button(action: { showTagPicker = true }) {
-                    HStack {
-                        if selectedTagIDs.isEmpty {
-                            Text("Add Tags")
-                                .foregroundColor(.secondary)
-                        } else {
-                            Text("Tags Added")
-                                .foregroundColor(.appGreenDark)
-                                .fontWeight(.semibold)
-                        }
-                        Spacer()
-                        Image(systemName: "chevron.up.chevron.down")
-                            .foregroundColor(.appGreenDark)
-                    }
-                    .padding(8)
-                    .background(
-                        RoundedRectangle(cornerRadius: 8)
-                            .fill(selectedTagIDs.isEmpty ? Color.appGreenPale : Color.appGreenLight)
-                    )
+            HStack {
+                if selectedTagIDs.isEmpty {
+                    Text("Add Tags")
+                        .foregroundColor(.secondary)
+                } else {
+                    Text("Tags Added")
+                        .foregroundColor(.appGreenDark)
+                        .fontWeight(.semibold)
                 }
-                .buttonStyle(PlainButtonStyle())
-                .padding(.horizontal)
-                .padding(.bottom, 8)
-                .frame(width: UIScreen.main.bounds.width / 2)
+                Spacer()
+                Image(systemName: "chevron.up.chevron.down")
+                    .foregroundColor(.appGreenDark)
+            }
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(selectedTagIDs.isEmpty ? Color.appGreenPale : Color.appGreenLight)
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .padding(.horizontal)
+        .padding(.bottom, 8)
+        .frame(width: UIScreen.main.bounds.width / 2)
     }
     
     private var divider: some View {
@@ -166,17 +166,17 @@ struct AddEntryView: View {
     }
     
     private var notesSection: some View {
-            ZStack {
-                Color.appWhite
-                TextEditor(text: $notes)
-                    .font(.body)
-                    .padding(4)
-                    .scrollContentBackground(.hidden)
-            }
-            .cornerRadius(8)
-            .padding(.horizontal)
-            .padding(.bottom, 12)
-            .frame(maxHeight: .infinity)
+        ZStack {
+            Color.appWhite
+            TextEditor(text: $notes)
+                .font(.body)
+                .padding(4)
+                .scrollContentBackground(.hidden)
+        }
+        .cornerRadius(8)
+        .padding(.horizontal)
+        .padding(.bottom, 12)
+        .frame(maxHeight: .infinity)
     }
 
     private var hasUnsavedChanges: Bool {
@@ -188,11 +188,22 @@ struct AddEntryView: View {
                notes != originalNotes ||
                selectedTagIDs != originalTagIDs
     }
+    
+    // Helper function for date formatting
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        return formatter.string(from: date)
+    }
 }
 
 struct AddEntryView_Previews: PreviewProvider {
     static var previews: some View {
-        AddEntryView(section: .other, tagStore: TagStore())
-            .modelContainer(for: JournalEntry.self, inMemory: true)
+         // New entry preview
+            AddEntryView(section: .other)
+                .environmentObject(TagStore())
+                .modelContainer(for: JournalEntry.self, inMemory: true)
+                .previewDisplayName("New Entry")
+           
     }
 }

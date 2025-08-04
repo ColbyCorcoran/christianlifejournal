@@ -14,8 +14,8 @@ struct AddSermonNotesView: View {
     let section: JournalSection // Add section parameter
     @Environment(\.dismiss) private var dismiss
     
-    @ObservedObject var speakerStore: SpeakerStore
-    @ObservedObject var tagStore: TagStore
+    @EnvironmentObject var speakerStore: SpeakerStore
+    @EnvironmentObject var tagStore: TagStore
 
     @State private var title: String = ""
     @FocusState private var isTitleFocused: Bool
@@ -47,11 +47,9 @@ struct AddSermonNotesView: View {
     }
 
     // Updated init to include section parameter with default
-    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .sermonNotes, speakerStore: SpeakerStore, tagStore: TagStore) {
+    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .sermonNotes) {
         self.entryToEdit = entryToEdit
         self.section = section
-        self.speakerStore = speakerStore
-        self.tagStore = tagStore
         
         var initialPassages: [ScripturePassageSelection]
         if let entryToEdit, let stored = entryToEdit.scripture, !stored.isEmpty {
@@ -184,14 +182,14 @@ struct AddSermonNotesView: View {
             )
             .overlay(
                 SpeakerPickerOverlay(
-                    speakerStore: speakerStore,
                     isPresented: $showSpeakerPicker,
                     selectedSpeaker: $selectedSpeaker
                 )
+                .environmentObject(speakerStore)
                 .opacity(showSpeakerPicker ? 1 : 0)
                 .animation(.easeInOut(duration: 0.2), value: showSpeakerPicker)
             )
-            .overlay(TagPickerOverlay(tagStore: tagStore, isPresented: $showTagPicker, selectedTagIDs: $selectedTagIDs)
+            .overlay(TagPickerOverlay(isPresented: $showTagPicker, selectedTagIDs: $selectedTagIDs)
             .opacity(showTagPicker ? 1: 0)
             .animation(.easeInOut(duration: 0.2), value: showTagPicker)
             )
@@ -363,7 +361,9 @@ struct AddSermonNotesView: View {
 
 struct AddSermonNotesView_Previews: PreviewProvider {
     static var previews: some View {
-        AddSermonNotesView(section: .sermonNotes, speakerStore: SpeakerStore(), tagStore: TagStore())
+        AddSermonNotesView(section: .sermonNotes)
+            .environmentObject(TagStore())
+            .environmentObject(SpeakerStore())
             .modelContainer(for: JournalEntry.self, inMemory: true)
     }
 }

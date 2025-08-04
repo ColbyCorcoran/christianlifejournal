@@ -9,11 +9,11 @@ import SwiftUI
 
 struct TagManagementView: View {
     @Binding var settingsPage: SettingsPage
-    @ObservedObject var tagStore: TagStore
+    @EnvironmentObject var tagStore: TagStore
     @State private var newTag: String = ""
-    @State private var editingIndex: Int? = nil
+    @State private var editingTagId: UUID? = nil
     @State private var editedTag: String = ""
-    @State private var tagToDelete: Int? = nil
+    @State private var tagToDelete: UUID? = nil
 
     var body: some View {
         VStack(spacing: 18) {
@@ -34,31 +34,38 @@ struct TagManagementView: View {
                 .padding(.bottom, 8)
 
             List {
-                ForEach(tagStore.userTags.indices, id: \.self) { idx in
+                ForEach(tagStore.userTags, id: \.id) { tag in
                     HStack {
-                        if editingIndex == idx {
+                        if editingTagId == tag.id {
                             TextField("Tag Name", text: $editedTag)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                             Button("Save") {
                                 if !editedTag.trimmingCharacters(in: .whitespaces).isEmpty {
-                                    tagStore.updateUserTag(at: idx, with: editedTag)
+                                    tagStore.updateUserTag(withId: tag.id, newName: editedTag)
                                 }
-                                editingIndex = nil
+                                editingTagId = nil
+                                editedTag = ""
                             }
                             .buttonStyle(.bordered)
                             .tint(.appGreenDark)
+                            
+                            Button("Cancel") {
+                                editingTagId = nil
+                                editedTag = ""
+                            }
+                            .buttonStyle(.bordered)
                         } else {
-                            Text(tagStore.userTags[idx].name)
+                            Text(tag.name)
                             Spacer()
                             Button(action: {
-                                editedTag = tagStore.userTags[idx].name
-                                editingIndex = idx
+                                editedTag = tag.name
+                                editingTagId = tag.id
                             }) {
                                 Image(systemName: "pencil")
                             }
                             .buttonStyle(.plain)
                             Button(action: {
-                                tagToDelete = idx
+                                tagToDelete = tag.id
                             }) {
                                 Image(systemName: "trash")
                                     .foregroundColor(.red)
@@ -101,8 +108,8 @@ struct TagManagementView: View {
             set: { if !$0 { tagToDelete = nil } }
         )) {
             Button("Delete", role: .destructive) {
-                if let idx = tagToDelete {
-                    tagStore.removeUserTag(at: idx)
+                if let tagId = tagToDelete {
+                    tagStore.removeUserTag(withId: tagId)
                 }
                 tagToDelete = nil
             }
@@ -117,6 +124,9 @@ struct TagManagementView: View {
 
 struct TagManagementView_Previews: PreviewProvider {
     static var previews: some View {
-        TagManagementView(settingsPage: .constant(.sectionControls), tagStore: TagStore())
+        TagManagementView(
+            settingsPage: .constant(.sectionControls)
+        )
+        .environmentObject(TagStore()) // Add this line
     }
 }

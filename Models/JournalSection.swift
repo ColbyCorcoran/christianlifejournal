@@ -7,7 +7,7 @@
 
 import Foundation
 
-enum JournalSection: String, CaseIterable {
+enum JournalSection: String, CaseIterable, Hashable {
     case personalTime = "Personal Time with God"
     case scriptureMemorization = "Scripture Memorization"
     case prayerJournal = "Prayer Journal"

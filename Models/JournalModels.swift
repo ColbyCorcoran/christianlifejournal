@@ -8,9 +8,11 @@
 import Foundation
 import SwiftData
 
+
+
 @Model
-final class JournalEntry {
-    @Attribute(.unique) var id: UUID
+class JournalEntry: Hashable {
+    @Attribute(.unique) var id: UUID = UUID()
     var section: String
     var title: String
     var date: Date
@@ -21,6 +23,14 @@ final class JournalEntry {
     var notes: String?
     var speaker: String?
     var tagIDs: [UUID] = [] // Store the IDs of assigned tags
+    
+    static func == (lhs: JournalEntry, rhs: JournalEntry) -> Bool {
+            lhs.id == rhs.id
+        }
+        
+        func hash(into hasher: inout Hasher) {
+            hasher.combine(id)
+        }
 
     init(
         id: UUID = UUID(),

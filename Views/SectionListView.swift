@@ -12,8 +12,8 @@ struct SectionListView: View {
     let section: JournalSection
     @Query(sort: \JournalEntry.date, order: .reverse) private var allEntries: [JournalEntry]
     
-    @StateObject var speakerStore = SpeakerStore()
-    @StateObject var tagStore = TagStore()
+    @EnvironmentObject var speakerStore: SpeakerStore
+    @EnvironmentObject var tagStore: TagStore
     
     @State private var showAddEntry = false
     @State private var showEditSheet = false
@@ -112,7 +112,6 @@ struct SectionListView: View {
                     .ignoresSafeArea()
                     .onTapGesture { showTagPicker = false }
                 TagPickerOverlay(
-                    tagStore: tagStore,
                     isPresented: $showTagPicker,
                     selectedTagIDs: $selectedTagIDs
                 )
@@ -120,7 +119,7 @@ struct SectionListView: View {
                 .zIndex(2)
             }
             
-            // Floating Add Entry Button (create-then-edit pattern)
+            // Floating Add Entry Button
             Button(action: {
                 showAddEntry = true
             }) {
@@ -191,27 +190,27 @@ struct SectionListView: View {
             }
         }
         .scrollContentBackground(.hidden)
+        .onAppear {
+            // Clear any stale navigation state
+            selectedEntries.removeAll()
+            isEditing = false
+        }
     }
 
-    // Update this method in your SectionListView
-    // Update this method in your SectionListView
     @ViewBuilder
     private func addEntrySheetView(entry: JournalEntry? = nil) -> some View {
         switch JournalSection(rawValue: entry?.section ?? section.rawValue) {
         case .personalTime:
-            AddPersonalTimeView(entryToEdit: entry, section: section, tagStore: tagStore)
+            AddPersonalTimeView(entryToEdit: entry, section: section)
         case .sermonNotes:
-            AddSermonNotesView(entryToEdit: entry, section: section, speakerStore: speakerStore, tagStore: tagStore)
+            AddSermonNotesView(entryToEdit: entry, section: section)
         case .scriptureMemorization, .prayerJournal, .groupNotes, .other, .none:
-            // Pass the section parameter for new entries
-            AddEntryView(entryToEdit: entry, section: section, tagStore: tagStore)
+            AddEntryView(entryToEdit: entry, section: section)
         }
     }
 }
 
-
-// MARK: - Helper Row View
-
+// Updated SectionListRow
 struct SectionListRow: View {
     let entry: JournalEntry
     let section: JournalSection
@@ -219,17 +218,15 @@ struct SectionListRow: View {
     let onDelete: () -> Void
 
     var body: some View {
-        NavigationLink(destination: JournalEntryDetailView(entry: entry)) {
+        NavigationLink(value: DashboardNav.entry(entry.id)) {
             VStack(alignment: .leading, spacing: 4) {
                 if section == .personalTime {
-                    // Date as main line, scripture as secondary
                     Text(formattedDate(entry.date))
                         .font(.headline)
                     Text(entry.scripture?.components(separatedBy: ";").first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? "")
                         .font(.caption)
                         .foregroundColor(.gray)
                 } else {
-                    // Title as main line, date as secondary
                     Text(entry.title)
                         .font(.headline)
                     Text(formattedDate(entry.date))

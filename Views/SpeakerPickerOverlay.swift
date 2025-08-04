@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct SpeakerPickerOverlay: View {
-    @ObservedObject var speakerStore: SpeakerStore
+    @EnvironmentObject var speakerStore: SpeakerStore // Changed to @EnvironmentObject
     @Binding var isPresented: Bool
     @Binding var selectedSpeaker: String
     @State private var newSpeaker: String = ""
@@ -52,18 +52,18 @@ struct SpeakerPickerOverlay: View {
                 .padding(.top, 8)
 
                 List {
-                    ForEach(speakerStore.speakers, id: \.self) { speaker in
+                    ForEach(speakerStore.speakers, id: \.id) { speaker in
                         HStack {
-                            Text(speaker)
+                            Text(speaker.name)
                             Spacer()
-                            if tempSelection == speaker {
+                            if tempSelection == speaker.name {
                                 Image(systemName: "checkmark")
                                     .foregroundColor(.appGreenDark)
                             }
                         }
                         .contentShape(Rectangle())
                         .onTapGesture {
-                            tempSelection = speaker
+                            tempSelection = speaker.name
                         }
                     }
                 }
@@ -78,7 +78,7 @@ struct SpeakerPickerOverlay: View {
                         .textFieldStyle(RoundedBorderTextFieldStyle())
                     Button("Create") {
                         let trimmed = newSpeaker.trimmingCharacters(in: .whitespaces)
-                        if !trimmed.isEmpty && !speakerStore.speakers.contains(trimmed) {
+                        if !trimmed.isEmpty && !speakerStore.speakers.contains(where: { $0.name == trimmed }) {
                             speakerStore.addSpeaker(trimmed)
                             tempSelection = trimmed
                             newSpeaker = ""
@@ -88,7 +88,6 @@ struct SpeakerPickerOverlay: View {
                     .tint(.appGreenDark)
                 }
                 .padding(.top, 8)
-//                Spacer()
             }
             .padding()
             .frame(width: 340, height: 320)
@@ -107,10 +106,9 @@ struct SpeakerPickerOverlay: View {
 struct SpeakerPickerOverlay_Previews: PreviewProvider {
     static var previews: some View {
         SpeakerPickerOverlay(
-            speakerStore: SpeakerStore(),
             isPresented: .constant(true),
             selectedSpeaker: .constant("")
         )
+        .environmentObject(SpeakerStore.preview)
     }
 }
-

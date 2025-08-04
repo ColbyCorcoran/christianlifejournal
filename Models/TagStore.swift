@@ -52,18 +52,37 @@ class TagStore: ObservableObject {
         let trimmed = name.trimmingCharacters(in: .whitespaces)
         guard !trimmed.isEmpty,
               !tags.contains(where: { $0.name.caseInsensitiveCompare(trimmed) == .orderedSame }) else { return }
-        tags.append(Tag(name: trimmed, type: .user))
+        
+        let newTag = Tag(name: trimmed, type: .user)
+        tags.append(newTag)
+        
+        // Force UI update
+        objectWillChange.send()
     }
 
-    func removeUserTag(at index: Int) {
-        guard tags.indices.contains(index), tags[index].type == .user else { return }
+    // FIXED: Use UUID-based removal instead of index-based
+    func removeUserTag(withId id: UUID) {
+        guard let index = tags.firstIndex(where: { $0.id == id && $0.type == .user }) else { return }
         tags.remove(at: index)
+        objectWillChange.send()
     }
-
-    func updateUserTag(at index: Int, with name: String) {
-        let trimmed = name.trimmingCharacters(in: .whitespaces)
-        guard tags.indices.contains(index), tags[index].type == .user, !trimmed.isEmpty else { return }
+    
+    // FIXED: Use UUID-based update instead of index-based
+    func updateUserTag(withId id: UUID, newName: String) {
+        let trimmed = newName.trimmingCharacters(in: .whitespaces)
+        guard !trimmed.isEmpty,
+              let index = tags.firstIndex(where: { $0.id == id && $0.type == .user }) else { return }
+        
+        // Check for duplicate names (excluding the current tag)
+        let isDuplicate = tags.enumerated().contains { (idx, tag) in
+            idx != index && tag.name.caseInsensitiveCompare(trimmed) == .orderedSame
+        }
+        
+        guard !isDuplicate else { return }
+        
+        // Create new tag with same ID but updated name
         tags[index] = Tag(name: trimmed, type: .user)
+        objectWillChange.send()
     }
 
     // MARK: - Tag Queries
@@ -77,8 +96,8 @@ class TagStore: ObservableObject {
     }
     
     func tag(for id: UUID) -> Tag? {
-            tags.first { $0.id == id }
-        }
+        tags.first { $0.id == id }
+    }
 
     func tag(for name: String) -> Tag? {
         tags.first { $0.name.caseInsensitiveCompare(name) == .orderedSame }
@@ -88,4 +107,3 @@ class TagStore: ObservableObject {
         tag(for: name)?.type == .default
     }
 }
-

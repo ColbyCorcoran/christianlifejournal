@@ -14,7 +14,7 @@ struct JournalEntryDetailView: View {
     let entry: JournalEntry
     
     @StateObject var speakerStore = SpeakerStore()
-    @StateObject var tagStore = TagStore()
+    @EnvironmentObject var tagStore: TagStore
 
     @State private var showEditSheet = false
 
@@ -46,6 +46,32 @@ struct JournalEntryDetailView: View {
                         .foregroundColor(.appGreenDark)
                 }
 
+                // Tags section
+                if !entry.tagIDs.isEmpty {
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text("Tags")
+                            .font(.subheadline)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.appGreenDark)
+                        
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 8) {
+                            ForEach(entry.tagIDs, id: \.self) { tagID in
+                                if let tag = tagStore.tag(for: tagID) {
+                                    Text(tag.name)
+                                        .font(.caption)
+                                        .padding(.horizontal, 8)
+                                        .padding(.vertical, 4)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 6)
+                                                .fill(Color.appGreenLight)
+                                        )
+                                        .foregroundColor(.appGreenDark)
+                                }
+                            }
+                        }
+                    }
+                }
+
                 // Body/Notes
                 if let notes = entry.notes, !notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                     Divider()
@@ -74,15 +100,27 @@ struct JournalEntryDetailView: View {
             }
         }
         .sheet(isPresented: $showEditSheet) {
+            // FIXED: Remove tagStore and speakerStore parameters since they use @EnvironmentObject
             switch JournalSection(rawValue: entry.section) {
             case .personalTime:
-                AddPersonalTimeView(entryToEdit: entry, tagStore: tagStore)
+                AddPersonalTimeView(entryToEdit: entry, section: .personalTime)
+                    .environmentObject(tagStore)
             case .sermonNotes:
-                AddSermonNotesView(entryToEdit: entry, speakerStore: speakerStore, tagStore: tagStore)
+                AddSermonNotesView(entryToEdit: entry, section: .sermonNotes)
+                    .environmentObject(tagStore)
+                    .environmentObject(speakerStore)
             case .scriptureMemorization, .prayerJournal, .groupNotes, .other, .none:
-                AddEntryView(entryToEdit: entry, tagStore: tagStore)
+                AddEntryView(entryToEdit: entry, section: JournalSection(rawValue: entry.section) ?? .other)
+                    .environmentObject(tagStore)
             }
         }
+    }
+    
+    // Helper function for date formatting
+    private func formattedDate(_ date: Date) -> String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .long
+        return formatter.string(from: date)
     }
 }
 
@@ -95,7 +133,11 @@ struct JournalEntryDetailView_Previews: PreviewProvider {
             scripture: "John 3:16",
             notes: "This is the body text/notes for the entry."
         )
-        JournalEntryDetailView(entry: entry)
+        // Add some sample tag IDs for preview
+        entry.tagIDs = []
+        
+        return JournalEntryDetailView(entry: entry)
+            .environmentObject(TagStore())
             .modelContainer(for: JournalEntry.self, inMemory: true)
     }
 }

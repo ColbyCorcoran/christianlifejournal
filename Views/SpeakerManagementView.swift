@@ -11,9 +11,9 @@ struct SpeakerManagementView: View {
     @Binding var settingsPage: SettingsPage
     @ObservedObject var speakerStore: SpeakerStore
     @State private var newSpeaker: String = ""
-    @State private var editingIndex: Int? = nil
+    @State private var editingSpeakerId: UUID? = nil
     @State private var editedSpeaker: String = ""
-    @State private var speakerToDelete: Int? = nil
+    @State private var speakerToDelete: UUID? = nil
 
     var body: some View {
         VStack(spacing: 18) {
@@ -31,31 +31,38 @@ struct SpeakerManagementView: View {
                 .padding(.bottom, 8)
 
             List {
-                ForEach(speakerStore.speakers.indices, id: \.self) { idx in
+                ForEach(speakerStore.speakers, id: \.id) { speaker in
                     HStack {
-                        if editingIndex == idx {
+                        if editingSpeakerId == speaker.id {
                             TextField("Speaker Name", text: $editedSpeaker)
                                 .textFieldStyle(RoundedBorderTextFieldStyle())
                             Button("Save") {
                                 if !editedSpeaker.trimmingCharacters(in: .whitespaces).isEmpty {
-                                    speakerStore.updateSpeaker(at: idx, with: editedSpeaker)
+                                    speakerStore.updateSpeaker(withId: speaker.id, newName: editedSpeaker)
                                 }
-                                editingIndex = nil
+                                editingSpeakerId = nil
+                                editedSpeaker = ""
                             }
                             .buttonStyle(.bordered)
                             .tint(.appGreenDark)
+                            
+                            Button("Cancel") {
+                                editingSpeakerId = nil
+                                editedSpeaker = ""
+                            }
+                            .buttonStyle(.bordered)
                         } else {
-                            Text(speakerStore.speakers[idx])
+                            Text(speaker.name)
                             Spacer()
                             Button(action: {
-                                editedSpeaker = speakerStore.speakers[idx]
-                                editingIndex = idx
+                                editedSpeaker = speaker.name
+                                editingSpeakerId = speaker.id
                             }) {
                                 Image(systemName: "pencil")
                             }
                             .buttonStyle(.plain)
                             Button(action: {
-                                speakerToDelete = idx
+                                speakerToDelete = speaker.id
                             }) {
                                 Image(systemName: "trash")
                                     .foregroundColor(.red)
@@ -75,7 +82,7 @@ struct SpeakerManagementView: View {
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                 Button("Create") {
                     let trimmed = newSpeaker.trimmingCharacters(in: .whitespaces)
-                    if !trimmed.isEmpty && !speakerStore.speakers.contains(trimmed) {
+                    if !trimmed.isEmpty && !speakerStore.speakers.contains(where: { $0.name == trimmed }) {
                         speakerStore.addSpeaker(trimmed)
                         newSpeaker = ""
                     }
@@ -98,8 +105,8 @@ struct SpeakerManagementView: View {
             set: { if !$0 { speakerToDelete = nil } }
         )) {
             Button("Delete", role: .destructive) {
-                if let idx = speakerToDelete {
-                    speakerStore.removeSpeaker(at: idx)
+                if let speakerId = speakerToDelete {
+                    speakerStore.removeSpeaker(withId: speakerId)
                 }
                 speakerToDelete = nil
             }
@@ -114,6 +121,9 @@ struct SpeakerManagementView: View {
 
 struct SpeakerManagementView_Previews: PreviewProvider {
     static var previews: some View {
-        SpeakerManagementView(settingsPage: .constant(.sectionControls), speakerStore: SpeakerStore())
+        SpeakerManagementView(
+            settingsPage: .constant(.sectionControls),
+            speakerStore: SpeakerStore.preview
+        )
     }
 }
