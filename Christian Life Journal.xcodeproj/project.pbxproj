@@ -14,12 +14,16 @@
 		B60C525E2E05BD1700800EB8 /* AddEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C525D2E05BD1700800EB8 /* AddEntryView.swift */; };
 		B60C52642E05D0C000800EB8 /* AddPersonalTimeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C52632E05D0C000800EB8 /* AddPersonalTimeView.swift */; };
 		B60C52662E05D0CA00800EB8 /* AddSermonNotesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C52652E05D0CA00800EB8 /* AddSermonNotesView.swift */; };
-		B60C52682E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C52672E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift */; };
 		B60C526A2E05DFD700800EB8 /* JournalEntryDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C52692E05DFD700800EB8 /* JournalEntryDetailView.swift */; };
 		B60C526E2E05E56800800EB8 /* CardSectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C526D2E05E56800800EB8 /* CardSectionView.swift */; };
 		B60C52702E05FB7500800EB8 /* JournalModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C526F2E05FB7500800EB8 /* JournalModels.swift */; };
+		B618C0A12E42A1DD00C07EAB /* ScriptureMemoryEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B618C0A02E42A1DD00C07EAB /* ScriptureMemoryEntry.swift */; };
+		B618C0A32E42A1F400C07EAB /* MemorizationModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = B618C0A22E42A1F400C07EAB /* MemorizationModels.swift */; };
+		B618C0A52E42A4BF00C07EAB /* AddScriptureMemoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B618C0A42E42A4BF00C07EAB /* AddScriptureMemoryView.swift */; };
+		B63C69A32E4392970090DF40 /* ScriptureFlashcardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B63C69A22E4392970090DF40 /* ScriptureFlashcardView.swift */; };
 		B648ABCE2E3AD16D003FF91E /* FilterButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = B648ABCD2E3AD16D003FF91E /* FilterButton.swift */; };
 		B6693C542E0607B1002FD994 /* Color+AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6693C532E0607B1002FD994 /* Color+AppColors.swift */; };
+		B66F14AA2E43D58800C426E5 /* MemorizationEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F14A92E43D58800C426E5 /* MemorizationEngine.swift */; };
 		B67127082E2186EE0097E590 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67127072E2186EE0097E590 /* SearchView.swift */; };
 		B671270E2E21E4C00097E590 /* BibleBooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = B671270D2E21E4C00097E590 /* BibleBooks.swift */; };
 		B675A6D12E27423200B5906D /* ScripturePassageSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */; };
@@ -63,12 +67,16 @@
 		B60C525D2E05BD1700800EB8 /* AddEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddEntryView.swift; sourceTree = "<group>"; };
 		B60C52632E05D0C000800EB8 /* AddPersonalTimeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddPersonalTimeView.swift; sourceTree = "<group>"; };
 		B60C52652E05D0CA00800EB8 /* AddSermonNotesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddSermonNotesView.swift; sourceTree = "<group>"; };
-		B60C52672E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddScriptureToMemorizeView.swift; sourceTree = "<group>"; };
 		B60C52692E05DFD700800EB8 /* JournalEntryDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalEntryDetailView.swift; sourceTree = "<group>"; };
 		B60C526D2E05E56800800EB8 /* CardSectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CardSectionView.swift; sourceTree = "<group>"; };
 		B60C526F2E05FB7500800EB8 /* JournalModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JournalModels.swift; sourceTree = "<group>"; };
+		B618C0A02E42A1DD00C07EAB /* ScriptureMemoryEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptureMemoryEntry.swift; sourceTree = "<group>"; };
+		B618C0A22E42A1F400C07EAB /* MemorizationModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemorizationModels.swift; sourceTree = "<group>"; };
+		B618C0A42E42A4BF00C07EAB /* AddScriptureMemoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AddScriptureMemoryView.swift; sourceTree = "<group>"; };
+		B63C69A22E4392970090DF40 /* ScriptureFlashcardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptureFlashcardView.swift; sourceTree = "<group>"; };
 		B648ABCD2E3AD16D003FF91E /* FilterButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FilterButton.swift; sourceTree = "<group>"; };
 		B6693C532E0607B1002FD994 /* Color+AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+AppColors.swift"; sourceTree = "<group>"; };
+		B66F14A92E43D58800C426E5 /* MemorizationEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MemorizationEngine.swift; sourceTree = "<group>"; };
 		B67127072E2186EE0097E590 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		B671270D2E21E4C00097E590 /* BibleBooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleBooks.swift; sourceTree = "<group>"; };
 		B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScripturePassageSelector.swift; sourceTree = "<group>"; };
@@ -147,6 +155,9 @@
 				B671270D2E21E4C00097E590 /* BibleBooks.swift */,
 				B6E062312E2C6CDA00BF32DE /* SpeakerStore.swift */,
 				B6AE9A322E3A699D00940291 /* TagStore.swift */,
+				B618C0A02E42A1DD00C07EAB /* ScriptureMemoryEntry.swift */,
+				B618C0A22E42A1F400C07EAB /* MemorizationModels.swift */,
+				B66F14A92E43D58800C426E5 /* MemorizationEngine.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -166,7 +177,8 @@
 				B60C525D2E05BD1700800EB8 /* AddEntryView.swift */,
 				B60C52632E05D0C000800EB8 /* AddPersonalTimeView.swift */,
 				B60C52652E05D0CA00800EB8 /* AddSermonNotesView.swift */,
-				B60C52672E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift */,
+				B618C0A42E42A4BF00C07EAB /* AddScriptureMemoryView.swift */,
+				B63C69A22E4392970090DF40 /* ScriptureFlashcardView.swift */,
 				B60C52692E05DFD700800EB8 /* JournalEntryDetailView.swift */,
 				B60C526D2E05E56800800EB8 /* CardSectionView.swift */,
 				B67127072E2186EE0097E590 /* SearchView.swift */,
@@ -332,14 +344,15 @@
 			buildActionMask = 2147483647;
 			files = (
 				B6E0622C2E2B053A00BF32DE /* SettingsMenuView.swift in Sources */,
+				B618C0A52E42A4BF00C07EAB /* AddScriptureMemoryView.swift in Sources */,
 				B60C52562E05BC7B00800EB8 /* DashboardView.swift in Sources */,
 				B60C52642E05D0C000800EB8 /* AddPersonalTimeView.swift in Sources */,
 				B60C525E2E05BD1700800EB8 /* AddEntryView.swift in Sources */,
+				B618C0A12E42A1DD00C07EAB /* ScriptureMemoryEntry.swift in Sources */,
 				B6AE9A332E3A699D00940291 /* TagStore.swift in Sources */,
 				B6E062302E2C570C00BF32DE /* SpeakerManagementView.swift in Sources */,
 				B60C526A2E05DFD700800EB8 /* JournalEntryDetailView.swift in Sources */,
 				B6E062342E2C6CF200BF32DE /* SpeakerPickerOverlay.swift in Sources */,
-				B60C52682E05D0DF00800EB8 /* AddScriptureToMemorizeView.swift in Sources */,
 				B671270E2E21E4C00097E590 /* BibleBooks.swift in Sources */,
 				B60C52502E05BC3E00800EB8 /* JournalSection.swift in Sources */,
 				B60C525C2E05BD0C00800EB8 /* SectionListView.swift in Sources */,
@@ -354,9 +367,12 @@
 				B675A6D12E27423200B5906D /* ScripturePassageSelector.swift in Sources */,
 				B6693C542E0607B1002FD994 /* Color+AppColors.swift in Sources */,
 				B6AE9A352E3A6B9700940291 /* TagPickerOverlay.swift in Sources */,
+				B63C69A32E4392970090DF40 /* ScriptureFlashcardView.swift in Sources */,
 				B6E0622A2E283CF300BF32DE /* Utilities.swift in Sources */,
 				B60C52702E05FB7500800EB8 /* JournalModels.swift in Sources */,
 				B648ABCE2E3AD16D003FF91E /* FilterButton.swift in Sources */,
+				B618C0A32E42A1F400C07EAB /* MemorizationModels.swift in Sources */,
+				B66F14AA2E43D58800C426E5 /* MemorizationEngine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

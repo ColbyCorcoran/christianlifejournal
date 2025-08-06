@@ -20,6 +20,7 @@ enum SettingsPage {
 enum DashboardNav: Hashable {
     case section(JournalSection)
     case entry(UUID) // Use UUID instead of JournalEntry
+    case scriptureEntry(UUID)
 }
 
 // Identifiable wrapper for reliable sheet presentation
@@ -31,6 +32,8 @@ struct IdentifiableSection: Identifiable {
 struct DashboardView: View {
     @Environment(\.modelContext) private var modelContext
     @Query(sort: \JournalEntry.date, order: .reverse) private var allEntries: [JournalEntry]
+    @Query(sort: \ScriptureMemoryEntry.dateAdded, order: .reverse)
+    private var allScriptureEntries: [ScriptureMemoryEntry]
     @State private var path: [DashboardNav] = []
     @State private var showSearch = false
     @State private var searchText = ""
@@ -41,6 +44,7 @@ struct DashboardView: View {
 
     @EnvironmentObject var speakerStore: SpeakerStore
     @EnvironmentObject var tagStore: TagStore
+    @StateObject private var memorizationSettings = MemorizationSettings()
 
     // Search filter state
     @State private var selectedTagIDs: Set<UUID> = []
@@ -133,13 +137,11 @@ struct DashboardView: View {
                     )
                     .environmentObject(tagStore)
                     .environmentObject(speakerStore)
+                    .environmentObject(memorizationSettings)
                     .frame(maxWidth: 340)
                     .transition(.scale)
                     .zIndex(2)
                 }
-
-                // Search as fullScreenCover instead of overlay
-                // REMOVED: Search overlay code
             }
             .sheet(item: $presentedSection) { identifiableSection in
                 addEntrySheetView(for: identifiableSection.section)
@@ -167,16 +169,29 @@ struct DashboardView: View {
                     SectionListView(section: section)
                         .environmentObject(tagStore)
                         .environmentObject(speakerStore)
+                        .environmentObject(memorizationSettings)
                 case .entry(let entryUUID):
                     // Find the entry by UUID
                     if let entry = allEntries.first(where: { $0.id == entryUUID }) {
                         JournalEntryDetailView(entry: entry)
                             .environmentObject(tagStore)
                             .environmentObject(speakerStore)
+                            .environmentObject(memorizationSettings)
                     } else {
                         // Fallback view if entry not found
                         ContentUnavailableView("Entry Not Found", systemImage: "doc.text")
                     }
+                case .scriptureEntry(let entryUUID):
+                        // Find the scripture entry by UUID
+                        if let entry = allScriptureEntries.first(where: { $0.id == entryUUID }) {
+                            ScriptureFlashcardView(entry: entry)
+                                .environmentObject(tagStore)
+                                .environmentObject(speakerStore)
+                                .environmentObject(memorizationSettings)
+                        } else {
+                            // Fallback view if scripture entry not found
+                            ContentUnavailableView("Scripture Entry Not Found", systemImage: "book.closed")
+                        }
                 }
             }
             .toolbar {
@@ -233,7 +248,11 @@ struct DashboardView: View {
             AddSermonNotesView(entryToEdit: nil, section: section)
                 .environmentObject(tagStore)
                 .environmentObject(speakerStore)
-        case .scriptureMemorization, .prayerJournal, .groupNotes, .other:
+        case .scriptureMemorization:
+            AddScriptureMemoryView()
+                .environmentObject(tagStore)
+                .environmentObject(memorizationSettings)
+        case .prayerJournal, .groupNotes, .other:
             AddEntryView(entryToEdit: nil, section: section)
                 .environmentObject(tagStore)
         }
@@ -245,6 +264,6 @@ struct DashboardView_Previews: PreviewProvider {
         DashboardView()
             .environmentObject(TagStore())
             .environmentObject(SpeakerStore())
-            .modelContainer(for: JournalEntry.self, inMemory: true)
+            .modelContainer(for: [JournalEntry.self, ScriptureMemoryEntry.self], inMemory: true)
     }
 }

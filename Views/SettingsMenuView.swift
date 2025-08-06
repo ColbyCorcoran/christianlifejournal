@@ -12,9 +12,10 @@ struct SettingsMenuView: View {
     @Binding var settingsPage: SettingsPage
     @EnvironmentObject var speakerStore: SpeakerStore
     @EnvironmentObject var tagStore: TagStore
+    @EnvironmentObject var memorizationSettings: MemorizationSettings
+    
     let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
     let buildNumber = Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"
-
 
     var body: some View {
         ZStack {
@@ -29,7 +30,7 @@ struct SettingsMenuView: View {
                             .foregroundColor(.appGreenDark)
                         Text("Christian Life Journal")
                             .font(.headline)
-                        Text("Version \(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?") (\(Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "?"))")
+                        Text("Version \(appVersion) (\(buildNumber))")
                             .font(.caption)
                             .foregroundColor(.secondary)
                         Text("iOS \(UIDevice.current.systemVersion)")
@@ -55,7 +56,6 @@ struct SettingsMenuView: View {
                     .font(.body)
                     .foregroundColor(.primary)
                     .frame(maxWidth: .infinity, alignment: .leading)
-
                 }
 
             case .sectionControls:
@@ -171,16 +171,35 @@ struct SettingsMenuView: View {
                     Text("\(Image(systemName: "switch.2")) Scripture Memorization System")
                         .font(.headline)
                         .padding(.bottom, 8)
+                    
                     Text("Our app utilizes a three-phase memorization system and will guide you through each of the 3 phases for each verse you choose to memorize. If you do not wish to use this system, and instead want the 'Scripture Memorization' section of this app to simply be flashcards, turn this toggle off. This will change the way the section will function and look.")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Toggle(isOn: .constant(true)) {
-                        Label("Memorization System", systemImage: "book")
+                        .multilineTextAlignment(.leading)
+                    
+                    // UPDATED: Working toggle connected to MemorizationSettings
+                    Toggle(isOn: $memorizationSettings.isSystemEnabled) {
+                        HStack {
+                            Image(systemName: memorizationSettings.isSystemEnabled ? "book.closed.fill" : "square.on.square")
+                                .foregroundColor(memorizationSettings.isSystemEnabled ? .appGreenDark : .gray)
+                            Text("Memorization System")
+                        }
                     }
-                    .disabled(true)
+                    .tint(.appGreenDark)
+                    
+                    // Status indicator
+                    HStack {
+                        Image(systemName: memorizationSettings.isSystemEnabled ? "checkmark.circle.fill" : "xmark.circle.fill")
+                            .foregroundColor(memorizationSettings.isSystemEnabled ? .green : .orange)
+                        Text(memorizationSettings.isSystemEnabled ? "System Active: Phased memorization with progress tracking" : "System Inactive: Simple flashcard mode")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 8)
                     
                     Spacer()
                 }
+                .padding(.horizontal, 4) // Extra padding for text readability
             }
         }
         .padding()
@@ -195,7 +214,9 @@ struct SettingsMenuView: View {
 
 struct SettingsMenuView_Previews: PreviewProvider {
     static var previews: some View {
-        SettingsMenuView(isPresented: .constant(true), settingsPage: .constant(.main))
+        SettingsMenuView(isPresented: .constant(true), settingsPage: .constant(.scriptureMemorization))
             .environmentObject(SpeakerStore())
+            .environmentObject(TagStore())
+            .environmentObject(MemorizationSettings())
     }
 }
