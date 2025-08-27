@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		B6032C512E5F479300448632 /* BinderManagementSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6032C502E5F479300448632 /* BinderManagementSettingsView.swift */; };
+		B6032C532E5F532900448632 /* MockEntryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6032C522E5F532900448632 /* MockEntryView.swift */; };
 		B60C524E2E05BC0D00800EB8 /* DateUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C524D2E05BC0D00800EB8 /* DateUtils.swift */; };
 		B60C52502E05BC3E00800EB8 /* JournalSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C524F2E05BC3E00800EB8 /* JournalSection.swift */; };
 		B60C52562E05BC7B00800EB8 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C52552E05BC7B00800EB8 /* DashboardView.swift */; };
@@ -94,6 +95,7 @@
 
 /* Begin PBXFileReference section */
 		B6032C502E5F479300448632 /* BinderManagementSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinderManagementSettingsView.swift; sourceTree = "<group>"; };
+		B6032C522E5F532900448632 /* MockEntryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockEntryView.swift; sourceTree = "<group>"; };
 		B60C51FE2E05B6BD00800EB8 /* Christian Life Journal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Christian Life Journal.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B60C520D2E05B6BE00800EB8 /* Christian Life JournalTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Christian Life JournalTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B60C52172E05B6BE00800EB8 /* Christian Life JournalUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Christian Life JournalUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -311,6 +313,7 @@
 		B66F15BE2E4F9CFC00C426E5 /* Add Entry Views */ = {
 			isa = PBXGroup;
 			children = (
+				B6032C522E5F532900448632 /* MockEntryView.swift */,
 				B60C525D2E05BD1700800EB8 /* AddEntryView.swift */,
 				B60C52632E05D0C000800EB8 /* AddPersonalTimeView.swift */,
 				B60C52652E05D0CA00800EB8 /* AddSermonNotesView.swift */,
@@ -596,6 +599,7 @@
 				B66F15B82E4F9B6A00C426E5 /* ScriptureListComponents.swift in Sources */,
 				B66F155E2E4D444E00C426E5 /* NewSettingsView.swift in Sources */,
 				B675A6D32E274ED000B5906D /* PassageRow.swift in Sources */,
+				B6032C532E5F532900448632 /* MockEntryView.swift in Sources */,
 				B60C52662E05D0CA00800EB8 /* AddSermonNotesView.swift in Sources */,
 				B60C524E2E05BC0D00800EB8 /* DateUtils.swift in Sources */,
 				B675A6D12E27423200B5906D /* ScripturePassageSelector.swift in Sources */,
@@ -794,8 +798,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -822,8 +826,8 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -861,6 +865,7 @@
 				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Z5476SBJVC;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				MARKETING_VERSION = 1.0;
@@ -894,6 +899,7 @@
 			buildSettings = {
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Z5476SBJVC;
 				GENERATE_INFOPLIST_FILE = YES;
 				MARKETING_VERSION = 1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "colbyacorcoran.Christian-Life-JournalUITests";
