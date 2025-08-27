@@ -11,7 +11,7 @@ import SwiftData
 extension PreviewProvider {
     static var previewContainer: ModelContainer {
         let config = ModelConfiguration(isStoredInMemoryOnly: true)
-        return try! ModelContainer(for: Tag.self, Speaker.self, JournalEntry.self, ScriptureMemoryEntry.self, PrayerRequest.self, PrayerCategory.self, configurations: config)
+        return try! ModelContainer(for: Tag.self, Speaker.self, JournalEntry.self, ScriptureMemoryEntry.self, PrayerRequest.self, PrayerCategory.self, Binder.self, configurations: config)
     }
     
     static var previewContext: ModelContext {
@@ -39,6 +39,10 @@ extension PreviewProvider {
     
     static var previewPrayerRequestStore: PrayerRequestStore {
         PrayerRequestStore(modelContext: previewContext)
+    }
+    
+    static var previewBinderStore: BinderStore {
+        BinderStore.previewStore(modelContext: previewContext)
     }
     
     // Preview model instances

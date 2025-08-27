@@ -13,7 +13,8 @@ struct YourApp: App {
             Tag.self,
             Speaker.self,
             PrayerRequest.self,
-            PrayerCategory.self
+            PrayerCategory.self,
+            Binder.self
         ])
     }
 }
@@ -26,5 +27,8 @@ struct ContentView: View {
         DashboardView()
             .environmentObject(TagStore(modelContext: modelContext))
             .environmentObject(SpeakerStore(modelContext: modelContext))
+            .environmentObject(BinderStore(modelContext: modelContext))
+            .environmentObject(PrayerCategoryStore(modelContext: modelContext))
+            .environmentObject(PrayerRequestStore(modelContext: modelContext))
     }
 }

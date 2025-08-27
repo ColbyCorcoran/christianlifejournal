@@ -10,8 +10,10 @@ import SwiftData
 
 struct ScriptureMemorizationListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var tagStore: TagStore
     @EnvironmentObject var memorizationSettings: MemorizationSettings
+    @EnvironmentObject var binderStore: BinderStore
     
     // State for filtering and search
     @State private var searchText = ""
@@ -20,6 +22,18 @@ struct ScriptureMemorizationListView: View {
     // State for sheets and view modes
     @State private var showAddSheet = false
     @State private var showAllVerses = false
+    @State private var entryToEdit: ScriptureMemoryEntry?
+    
+    // Bulk selection state
+    @State private var isEditing = false
+    @State private var selectedEntries: Set<ScriptureMemoryEntry> = []
+    @State private var showBulkActions = false
+    @State private var showBulkBinderPicker = false
+    @State private var showDeleteConfirmation = false
+    
+    // Individual entry actions
+    @State private var showIndividualDeleteConfirmation = false
+    @State private var entryToDelete: ScriptureMemoryEntry?
     
     // SwiftData query for Scripture Memory entries
     @Query(
@@ -76,15 +90,29 @@ struct ScriptureMemorizationListView: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Main content area
-            VStack(spacing: 0) {
-                // Added view mode toggle header above content
-                if memorizationSettings.isSystemEnabled {
-                    viewModeToggleHeader
-                        .padding(.horizontal, 20)
-                        .padding(.bottom, 8)
+            // Header section (non-scrolling)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Image(systemName: "book.closed.fill")
+                        .font(.title2)
+                        .foregroundColor(.appGreenDark)
+                    Text("Scripture Memorization")
+                        .font(.title)
+                        .fontWeight(.bold)
+                        .foregroundColor(.appGreenDark)
                 }
                 
+                Text("Add verses to memorize with flashcard style")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(.horizontal)
+            .padding(.bottom, 20)
+            .background(Color.appWhite)
+            
+            // Main content area
+            VStack(spacing: 0) {
                 if memorizationSettings.isSystemEnabled && !showAllVerses {
                     // System ON: Dashboard view with phases
                     dashboardView
@@ -116,45 +144,152 @@ struct ScriptureMemorizationListView: View {
                 .background(Color.appWhite)
             }
         }
-        .navigationTitle("Scripture Memorization")
+        .background(Color.appWhite.ignoresSafeArea())
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden()
+        .toolbar {
+            if !isEditing {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 17, weight: .medium))
+                            Text("Back")
+                        }
+                    }
+                    .foregroundColor(.appGreenDark)
+                }
+            }
+            
+            if memorizationSettings.isSystemEnabled && !isEditing {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    HStack {
+                        Button(showAllVerses ? "Dashboard" : "View All") {
+                            showAllVerses.toggle()
+                        }
+                        
+                        
+                        if !filteredEntries.isEmpty {
+                            Button("Select") { isEditing = true }
+                        }
+                    }
+                }
+            } else {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    if isEditing {
+                        HStack {
+                            let selectedCount = selectedEntries.count
+                            if selectedCount > 0 {
+                                Button("Actions (\(selectedCount))") {
+                                    showBulkActions = true
+                                }
+                                .foregroundColor(.appGreenDark)
+                            }
+                            
+                            Button("Done") {
+                                isEditing = false
+                                selectedEntries.removeAll()
+                            }
+                        }
+                    } else {
+                        if !filteredEntries.isEmpty {
+                            Button("Select") { isEditing = true }
+                        }
+                    }
+                }
+            }
+        }
         .sheet(isPresented: $showAddSheet) {
             AddScriptureMemoryView()
                 .environmentObject(memorizationSettings)
                 .environmentObject(tagStore)
                 .environment(\.modelContext, modelContext)
         }
+        .sheet(item: $entryToEdit) { entry in
+            AddScriptureMemoryView(entryToEdit: entry)
+                .environmentObject(memorizationSettings)
+                .environmentObject(tagStore)
+                .environment(\.modelContext, modelContext)
+        }
+        .sheet(isPresented: $showBulkActions) {
+            ScriptureBulkActionsSheet(
+                selectedCount: selectedEntries.count,
+                isPresented: $showBulkActions,
+                onAddToBinders: { showBulkBinderPicker = true },
+                onDelete: { showDeleteConfirmation = true }
+            )
+        }
+        .sheet(isPresented: $showBulkBinderPicker) {
+            BulkBinderPickerSheet(
+                selectedItems: .scriptureEntries(Array(selectedEntries)),
+                isPresented: $showBulkBinderPicker,
+                onComplete: {
+                    selectedEntries.removeAll()
+                    isEditing = false
+                }
+            )
+            .environmentObject(binderStore)
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .confirmationDialog(
+            "Delete \(selectedEntries.count) verses?",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                // Delete selected entries
+                for entry in selectedEntries {
+                    modelContext.delete(entry)
+                }
+                
+                do {
+                    try modelContext.save()
+                } catch {
+                    print("Error deleting entries: \(error)")
+                }
+                
+                selectedEntries.removeAll()
+                isEditing = false
+            }
+            
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This action cannot be undone.")
+        }
+        .confirmationDialog(
+            "Delete verse?",
+            isPresented: $showIndividualDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                if let entry = entryToDelete {
+                    modelContext.delete(entry)
+                    do {
+                        try modelContext.save()
+                    } catch {
+                        print("Error deleting entry: \(error)")
+                    }
+                }
+                entryToDelete = nil
+            }
+            
+            Button("Cancel", role: .cancel) {
+                entryToDelete = nil
+            }
+        } message: {
+            if let entry = entryToDelete {
+                Text("This will permanently delete \"\(entry.bibleReference)\".")
+            }
+        }
         .onAppear {
             // Reset filter state when view appears
         }
     }
     
-    // MARK: - View Mode Toggle Header
-    
-    @ViewBuilder
-    private var viewModeToggleHeader: some View {
-        HStack {
-            Spacer()
-            
-            Button(showAllVerses ? "Show Dashboard" : "View All Verses") {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    showAllVerses.toggle()
-                }
-            }
-            .font(.subheadline)
-            .foregroundColor(.appGreenDark)
-            .padding(.horizontal, 12)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color.appGreenPale.opacity(0.3))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 8)
-                            .stroke(Color.appGreenDark.opacity(0.2), lineWidth: 1)
-                    )
-            )
-        }
-    }
     
     // MARK: - Dashboard View (System ON, Phase View)
     
@@ -173,7 +308,27 @@ struct ScriptureMemorizationListView: View {
                 if !phases.phase1.isEmpty {
                     Section(header: phaseHeaderView(phase: .phase1, count: phases.phase1.count)) {
                         ForEach(phases.phase1) { entry in
-                            scriptureRowView(entry: entry, showPhase: false)
+                            if isEditing {
+                                HStack {
+                                    Image(systemName: selectedEntries.contains(entry) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(selectedEntries.contains(entry) ? .appGreenDark : .gray)
+                                        .font(.title3)
+                                    
+                                    scriptureRowView(entry: entry, showPhase: false)
+                                        .environmentObject(binderStore)
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    if selectedEntries.contains(entry) {
+                                        selectedEntries.remove(entry)
+                                    } else {
+                                        selectedEntries.insert(entry)
+                                    }
+                                }
+                            } else {
+                                scriptureRowView(entry: entry, showPhase: false)
+                                    .environmentObject(binderStore)
+                            }
                         }
                     }
                 }
@@ -182,7 +337,27 @@ struct ScriptureMemorizationListView: View {
                 if !phases.phase2.isEmpty {
                     Section(header: phaseHeaderView(phase: .phase2, count: phases.phase2.count)) {
                         ForEach(phases.phase2) { entry in
-                            scriptureRowView(entry: entry, showPhase: false)
+                            if isEditing {
+                                HStack {
+                                    Image(systemName: selectedEntries.contains(entry) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(selectedEntries.contains(entry) ? .appGreenDark : .gray)
+                                        .font(.title3)
+                                    
+                                    scriptureRowView(entry: entry, showPhase: false)
+                                        .environmentObject(binderStore)
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    if selectedEntries.contains(entry) {
+                                        selectedEntries.remove(entry)
+                                    } else {
+                                        selectedEntries.insert(entry)
+                                    }
+                                }
+                            } else {
+                                scriptureRowView(entry: entry, showPhase: false)
+                                    .environmentObject(binderStore)
+                            }
                         }
                     }
                 }
@@ -191,7 +366,27 @@ struct ScriptureMemorizationListView: View {
                 if !phases.phase3.isEmpty {
                     Section(header: phaseHeaderView(phase: .phase3, count: phases.phase3.count)) {
                         ForEach(phases.phase3) { entry in
-                            scriptureRowView(entry: entry, showPhase: false)
+                            if isEditing {
+                                HStack {
+                                    Image(systemName: selectedEntries.contains(entry) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(selectedEntries.contains(entry) ? .appGreenDark : .gray)
+                                        .font(.title3)
+                                    
+                                    scriptureRowView(entry: entry, showPhase: false)
+                                        .environmentObject(binderStore)
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    if selectedEntries.contains(entry) {
+                                        selectedEntries.remove(entry)
+                                    } else {
+                                        selectedEntries.insert(entry)
+                                    }
+                                }
+                            } else {
+                                scriptureRowView(entry: entry, showPhase: false)
+                                    .environmentObject(binderStore)
+                            }
                         }
                     }
                 }
@@ -294,7 +489,27 @@ struct ScriptureMemorizationListView: View {
         } else {
             List {
                 ForEach(filteredEntries) { entry in
-                    scriptureRowView(entry: entry, showPhase: memorizationSettings.isSystemEnabled)
+                    if isEditing {
+                        HStack {
+                            Image(systemName: selectedEntries.contains(entry) ? "checkmark.circle.fill" : "circle")
+                                .foregroundColor(selectedEntries.contains(entry) ? .appGreenDark : .gray)
+                                .font(.title3)
+                            
+                            scriptureRowView(entry: entry, showPhase: memorizationSettings.isSystemEnabled)
+                                .environmentObject(binderStore)
+                        }
+                        .contentShape(Rectangle())
+                        .onTapGesture {
+                            if selectedEntries.contains(entry) {
+                                selectedEntries.remove(entry)
+                            } else {
+                                selectedEntries.insert(entry)
+                            }
+                        }
+                    } else {
+                        scriptureRowView(entry: entry, showPhase: memorizationSettings.isSystemEnabled)
+                            .environmentObject(binderStore)
+                    }
                 }
             }
             .listStyle(.plain)
@@ -410,9 +625,20 @@ struct ScriptureMemorizationListView: View {
         ScriptureListRow(
             entry: entry,
             showPhase: showPhase,
-            onDelete: { }, // Disable delete in this view
-            onEdit: { }    // Disable edit in this view
+            onDelete: { deleteEntry(entry) },
+            onEdit: { editEntry(entry) }
         )
+    }
+    
+    // MARK: - Individual Entry Actions
+    
+    private func deleteEntry(_ entry: ScriptureMemoryEntry) {
+        entryToDelete = entry
+        showIndividualDeleteConfirmation = true
+    }
+    
+    private func editEntry(_ entry: ScriptureMemoryEntry) {
+        entryToEdit = entry
     }
 }
 
@@ -465,6 +691,98 @@ struct MemorizationPhaseFilterBuilder {
         ]
         
         return FilterGroup(chips: chips)
+    }
+}
+
+// MARK: - Scripture Bulk Actions Sheet
+
+struct ScriptureBulkActionsSheet: View {
+    let selectedCount: Int
+    @Binding var isPresented: Bool
+    
+    let onAddToBinders: () -> Void
+    let onDelete: () -> Void
+    
+    var body: some View {
+        List {
+            Section {
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.appGreenDark)
+                            .font(.title3)
+                        Text("Bulk Actions")
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundColor(.appGreenDark)
+                    }
+                    
+                    Text("\(selectedCount) \(selectedCount == 1 ? "verse" : "verses") selected")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.vertical, 0)
+            }
+            .listRowBackground(Color.appGreenPale.opacity(0.1))
+            .listRowInsets(EdgeInsets(top: 8, leading: 16, bottom: 8, trailing: 16))
+            
+            Section("Actions") {
+                Button(action: {
+                    onAddToBinders()
+                    isPresented = false
+                }) {
+                    actionRowView(
+                        icon: "books.vertical.circle.fill",
+                        title: "Add to Binders",
+                        subtitle: "Add all selected verses to binders"
+                    )
+                }
+                
+                Button(action: {
+                    onDelete()
+                    isPresented = false
+                }) {
+                    actionRowView(
+                        icon: "trash",
+                        title: "Delete",
+                        subtitle: "Permanently remove all selected verses",
+                        isDestructive: true
+                    )
+                }
+            }
+            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+        }
+        .listSectionSpacing(.compact)
+        .presentationDetents([.medium])
+        .presentationDragIndicator(.visible)
+    }
+    
+    @ViewBuilder
+    private func actionRowView(icon: String, title: String, subtitle: String, isDestructive: Bool = false) -> some View {
+        HStack {
+            Image(systemName: icon)
+                .foregroundColor(isDestructive ? .red : .appGreenDark)
+                .font(.system(size: 18, weight: .medium))
+                .frame(width: 24, height: 24)
+            
+            VStack(alignment: .leading, spacing: 2) {
+                Text(title)
+                    .font(.body)
+                    .fontWeight(.medium)
+                    .foregroundColor(isDestructive ? .red : .primary)
+                
+                Text(subtitle)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+            
+            Spacer()
+            
+            Image(systemName: "chevron.right")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .padding(.vertical, 4)
     }
 }
 

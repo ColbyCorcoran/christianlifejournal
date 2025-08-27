@@ -15,14 +15,19 @@ struct AddPersonalTimeView: View {
     @Environment(\.dismiss) private var dismiss
     
     @EnvironmentObject var tagStore: TagStore
+    @EnvironmentObject var binderStore: BinderStore
 
     @State private var selectedPassages: [ScripturePassageSelection] = []
     
+    @State private var title: String = ""
+    @FocusState private var isTitleFocused: Bool
     @State private var notes: String = ""
     @State private var showScripturePicker = false
     @State private var showLeaveAlert = false
     @State private var showTagPicker = false
     @State private var selectedTagIDs: Set<UUID> = []
+    @State private var showBinderPicker = false
+    @State private var selectedBinderIDs: Set<UUID> = []
     
     // Remove isNewEntry since we're not using the old pattern anymore
     
@@ -39,15 +44,17 @@ struct AddPersonalTimeView: View {
         entryToEdit == nil ? "Add \(currentSection.navigationTitle) Entry" : "Edit \(currentSection.navigationTitle) Entry"
     }
 
-    // Updated init to include section parameter with default
-    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .personalTime) {
+    // Updated init to include section parameter with default and preselected binder
+    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .personalTime, preselectedBinderID: UUID? = nil) {
         self.entryToEdit = entryToEdit
         self.section = section
         self.date = entryToEdit?.date ?? Date()
         
         // Initialize basic properties
+        _title = State(initialValue: entryToEdit?.title ?? "")
         _notes = State(initialValue: entryToEdit?.notes ?? "")
         _selectedTagIDs = State(initialValue: Set(entryToEdit?.tagIDs ?? []))
+        _selectedBinderIDs = State(initialValue: preselectedBinderID != nil ? Set([preselectedBinderID!]) : Set())
         
         // Parse passages if they exist
         var initialPassages: [ScripturePassageSelection] = []
@@ -102,6 +109,30 @@ struct AddPersonalTimeView: View {
                                     .foregroundColor(.gray)
                             }
                             
+                            // Title field
+                            VStack(alignment: .leading, spacing: 8) {
+                                Text("Title")
+                                    .font(.subheadline)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.appGreenDark)
+                                
+                                TextField("Enter entry title...", text: $title)
+                                    .textFieldStyle(.plain)
+                                    .padding(8)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(Color.appGreenDark, lineWidth: 1)
+                                            .background(
+                                                RoundedRectangle(cornerRadius: 8)
+                                                    .fill(Color.appGreenPale.opacity(0.1))
+                                            )
+                                    )
+                                    .focused($isTitleFocused)
+                                
+                                // Binder section (full-width for Personal Time)
+                                binderSection
+                            }
+                            
                             HStack {
                                 // Scripture Passages section
                                 VStack(alignment: .leading, spacing: 8) {
@@ -112,16 +143,13 @@ struct AddPersonalTimeView: View {
                                     
                                     Button(action: { showScripturePicker = true }) {
                                         HStack {
-                                            if selectedPassages.isEmpty {
-                                                Text("Select Verses")
-                                                    .foregroundColor(.gray)
-                                            } else {
-                                                Text("\(selectedPassages.count) selected")
-                                                    .foregroundColor(.appGreenDark)
-                                                    .fontWeight(.medium)
-                                            }
+                                            Text(selectedPassages.isEmpty ? "Select Verses" : "\(selectedPassages.count) selected")
+                                                .font(.body)
+                                                .foregroundColor(selectedPassages.isEmpty ? .gray : .appGreenDark)
+                                            
                                             Spacer()
-                                            Image(systemName: "book")
+                                            
+                                            Image(systemName: selectedPassages.isEmpty ? "book" : "book.fill")
                                                 .foregroundColor(.appGreenDark)
                                         }
                                         .padding(8)
@@ -134,7 +162,7 @@ struct AddPersonalTimeView: View {
                                                 )
                                         )
                                     }
-                                    .buttonStyle(PlainButtonStyle())
+                                    .buttonStyle(.plain)
                                 }
                                 
                                 // Tags section
@@ -156,9 +184,6 @@ struct AddPersonalTimeView: View {
                                 .fill(Color.white)
                                 .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                         )
-                        
-                        
-                        
                         
                         
                         // Notes Card (Taller)
@@ -210,26 +235,34 @@ struct AddPersonalTimeView: View {
                         
                         if let entryToEdit = entryToEdit {
                             // Editing existing entry
-                            entryToEdit.title = ""
+                            entryToEdit.title = title
                             entryToEdit.scripture = passagesString
                             entryToEdit.notes = notes
                             entryToEdit.tagIDs = Array(selectedTagIDs)
                             try? modelContext.save()
+                            
+                            // Update binder associations
+                            binderStore.updateBinderAssociations(for: entryToEdit, selectedBinderIDs: selectedBinderIDs)
                         } else {
                             // Creating new entry - use the section parameter
                             let newEntry = JournalEntry(
                                 section: currentSection.rawValue,
-                                title: "",
+                                title: title,
                                 date: date,
                                 scripture: passagesString,
                                 notes: notes
                             )
                             newEntry.tagIDs = Array(selectedTagIDs)
                             modelContext.insert(newEntry)
+                            
+                            // Add to selected binders
+                            for binderID in selectedBinderIDs {
+                                binderStore.addEntry(newEntry, to: binderID)
+                            }
                         }
                         dismiss()
                     }
-                    .disabled(false)
+                    .disabled(title.trimmingCharacters(in: .whitespaces).isEmpty)
                     .foregroundColor(.appGreenDark)
                 }
             }
@@ -252,25 +285,70 @@ struct AddPersonalTimeView: View {
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
+            .sheet(isPresented: $showBinderPicker) {
+                BinderPickerSheet(selectedBinderIDs: $selectedBinderIDs)
+                    .environmentObject(binderStore)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
             .tint(Color.appGreenDark)
+            .onAppear {
+                if let entry = entryToEdit {
+                    // Initialize binder selection for editing
+                    let entryBinders = binderStore.bindersContaining(journalEntryID: entry.id)
+                    selectedBinderIDs = Set(entryBinders.map { $0.id })
+                } else {
+                    // Focus title field for new entries
+                    isTitleFocused = true
+                }
+            }
         }
         .tint(Color.appGreenDark)
+    }
+
+    private var binderSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Binders")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.appGreenDark)
+            
+            Button(action: { showBinderPicker = true }) {
+                HStack {
+                    Text(selectedBinderIDs.isEmpty ? "Select Binders" : "\(selectedBinderIDs.count) selected")
+                        .font(.body)
+                        .foregroundColor(selectedBinderIDs.isEmpty ? .gray : .appGreenDark)
+                    
+                    Spacer()
+                    
+                    Image(systemName: selectedBinderIDs.isEmpty ? "books.vertical" : "books.vertical.fill")
+                        .foregroundColor(.appGreenDark)
+                }
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.appGreenDark, lineWidth: 1)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selectedBinderIDs.isEmpty ? Color.clear : Color.appGreenPale.opacity(0.3))
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+        }
     }
 
     private var tagsSection: some View {
         Button(action: { showTagPicker = true }) {
             HStack {
-                if selectedTagIDs.isEmpty {
-                    Text("Select Tags")
-                        .foregroundColor(.gray)
-                } else {
-                    Text("\(selectedTagIDs.count) selected")
-                        .foregroundColor(.appGreenDark)
-                        .fontWeight(.medium)
-                }
+                Text(selectedTagIDs.isEmpty ? "Select Tags" : "\(selectedTagIDs.count) selected")
+                    .font(.body)
+                    .foregroundColor(selectedTagIDs.isEmpty ? .gray : .appGreenDark)
+                
                 Spacer()
-                Image(systemName: "tag")
-                    .foregroundColor(.appGreenDark)
+                
+                Image(systemName: selectedTagIDs.isEmpty ? "tag" : "tag.fill")
+                    .foregroundColor(selectedTagIDs.isEmpty ? .gray : .appGreenDark)
             }
             .padding(8)
             .background(
@@ -282,17 +360,19 @@ struct AddPersonalTimeView: View {
                     )
             )
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
     }
     
 
     private var notesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        ZStack(alignment: .topLeading) {
             if notes.isEmpty {
-                Text("Share your thoughts, reflections, and insights...")
+                Text("Record your thoughts, reflections, and insights...")
                     .foregroundColor(.gray)
                     .italic()
                     .padding(.bottom, 4)
+                    .padding(.top, 8)
+                    .padding(.leading, 5)
             }
             
             TextEditor(text: $notes)
@@ -306,7 +386,7 @@ struct AddPersonalTimeView: View {
                                 .fill(Color.appGreenPale.opacity(0.1))
                         )
                 )
-                .frame(minHeight: 250)
+                .frame(minHeight: 325)
                 .onTapGesture {
                     showScripturePicker = false
                 }
@@ -350,6 +430,7 @@ struct AddPersonalTimeView: View {
     }
 
     private var hasUnsavedChanges: Bool {
+        let originalTitle = entryToEdit?.title ?? ""
         let originalNotes = entryToEdit?.notes ?? ""
         let originalTagIDs = Set(entryToEdit?.tagIDs ?? [])
         
@@ -361,7 +442,8 @@ struct AddPersonalTimeView: View {
         .filter { !$0.isEmpty }
         .joined(separator: "; ")
         
-        return notes != originalNotes ||
+        return title != originalTitle ||
+               notes != originalNotes ||
                selectedTagIDs != originalTagIDs ||
                currentPassagesString != originalPassagesString
     }

@@ -13,6 +13,14 @@ struct PrayerAnsweredCelebrationView: View {
     
     @State private var showContent = false
     @State private var scale: CGFloat = 0.8
+    @State private var celebrationScripture: AnsweredPrayerScripture
+    
+    init(prayerRequest: PrayerRequest, isPresented: Binding<Bool>) {
+        self.prayerRequest = prayerRequest
+        self._isPresented = isPresented
+        // Get a random scripture for this celebration
+        self._celebrationScripture = State(initialValue: AnsweredPrayerScriptureManager().getRandomScripture())
+    }
     
     var body: some View {
         ZStack {
@@ -67,7 +75,7 @@ struct PrayerAnsweredCelebrationView: View {
                 
                 // Bible Verse
                 VStack(spacing: 8) {
-                    Text("Before they call I will answer; while they are still speaking I will hear.")
+                    Text(celebrationScripture.text)
                         .font(.body)
                         .italic()
                         .foregroundColor(.appGreenDark)
@@ -75,7 +83,7 @@ struct PrayerAnsweredCelebrationView: View {
                         .opacity(showContent ? 1.0 : 0)
                         .animation(.easeInOut(duration: 0.5).delay(1.0), value: showContent)
                     
-                    Text("Isaiah 65:24")
+                    Text(celebrationScripture.reference)
                         .font(.caption)
                         .fontWeight(.medium)
                         .foregroundColor(.appGreenMedium)

@@ -12,13 +12,28 @@ struct ScriptureFlashcardView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @EnvironmentObject var memorizationSettings: MemorizationSettings
+    @EnvironmentObject var binderStore: BinderStore
+    @EnvironmentObject var tagStore: TagStore
+    @EnvironmentObject var speakerStore: SpeakerStore
+    @EnvironmentObject var prayerCategoryStore: PrayerCategoryStore
+    @EnvironmentObject var prayerRequestStore: PrayerRequestStore
     
     let entry: ScriptureMemoryEntry
     let embedInNavigationView: Bool
+    let showBinderFunctionality: Bool
+    
+    init(entry: ScriptureMemoryEntry, embedInNavigationView: Bool, showBinderFunctionality: Bool = true) {
+        self.entry = entry
+        self.embedInNavigationView = embedInNavigationView
+        self.showBinderFunctionality = showBinderFunctionality
+    }
     
     @State private var showingReference = true
     @State private var isFlipping = false
     @State private var showingEditView = false
+    @State private var showBinderContents = false
+    @State private var showBinderSelector = false
+    @State private var selectedBinder: Binder?
     @State private var flipAngle: Double = 0
     
     // Computed properties for completion status
@@ -28,7 +43,6 @@ struct ScriptureFlashcardView: View {
     }
     
     private var hasCompletedToday: Bool {
-        guard memorizationSettings.isSystemEnabled else { return false }
         guard let lastCompletion = entry.lastCompletionDate else { return false }
         return Calendar.current.isDate(lastCompletion, inSameDayAs: Date())
     }
@@ -45,6 +59,15 @@ struct ScriptureFlashcardView: View {
         }
     }
     
+    // Computed properties for binder context
+    private var entryBinders: [Binder] {
+        binderStore.bindersContaining(scriptureEntryID: entry.id)
+    }
+    
+    private var isInBinders: Bool {
+        !entryBinders.isEmpty
+    }
+    
     var body: some View {
         Group {
             if embedInNavigationView {
@@ -58,6 +81,32 @@ struct ScriptureFlashcardView: View {
         .sheet(isPresented: $showingEditView) {
             AddScriptureMemoryView(entryToEdit: entry)
                 .environmentObject(memorizationSettings)
+        }
+        .sheet(item: Binding<Binder?>(
+            get: { showBinderFunctionality && showBinderContents ? selectedBinder : nil },
+            set: { _ in showBinderContents = false; selectedBinder = nil }
+        )) { binder in
+            NavigationStack {
+                BinderContentsView(binder: binder)
+                    .environmentObject(binderStore)
+                    .environmentObject(tagStore)
+                    .environmentObject(speakerStore)
+                    .environmentObject(memorizationSettings)
+                    .environmentObject(prayerCategoryStore)
+                    .environmentObject(prayerRequestStore)
+                    .navigationTitle("")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .navigationBarHidden(true)
+            }
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: Binding(
+            get: { showBinderFunctionality && showBinderSelector },
+            set: { showBinderSelector = $0 }
+        )) {
+            NavigationView {
+                binderSelectorView
+            }
         }
     }
     
@@ -89,10 +138,24 @@ struct ScriptureFlashcardView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                Button("Edit") {
-                    showingEditView = true
+                HStack(spacing: 16) {
+                    // Contextual binder icon - only show if entry is in binders and binder functionality is enabled
+                    if showBinderFunctionality && isInBinders {
+                        Button(action: {
+                            handleBinderIconTap()
+                        }) {
+                            Image(systemName: "books.vertical.fill")
+                                .font(.system(size: 16, weight: .medium))
+                        }
+                        .foregroundColor(.appGreenDark)
+                        .accessibilityLabel(entryBinders.count == 1 ? "View Binder" : "View Binders")
+                    }
+                    
+                    Button("Edit") {
+                        showingEditView = true
+                    }
+                    .foregroundColor(.appGreenDark)
                 }
-                .foregroundColor(.appGreenDark)
             }
         }
     }
@@ -396,7 +459,7 @@ struct ScriptureFlashcardView: View {
                         .fill(hasCompletedToday ? Color.appGreenDark : Color.appGreenDark)
                 )
             }
-            .disabled(hasCompletedToday && memorizationSettings.isSystemEnabled)
+            .disabled(hasCompletedToday)
             .buttonStyle(PlainButtonStyle())
         }
         
@@ -468,14 +531,115 @@ struct ScriptureFlashcardView: View {
         }
         
         private func completeToday() {
-            guard memorizationSettings.isSystemEnabled else { return }
-            
-            do {
-                try MemorizationEngine.processCompletion(for: entry, modelContext: modelContext)
-            } catch {
-                print("Error saving completion: \(error)")
+            if memorizationSettings.isSystemEnabled {
+                // Full memorization system functionality
+                do {
+                    try MemorizationEngine.processCompletion(for: entry, modelContext: modelContext)
+                } catch {
+                    print("Error saving completion: \(error)")
+                }
+            } else {
+                // Simple review tracking when system is disabled
+                entry.lastCompletionDate = Date()
+                
+                do {
+                    try modelContext.save()
+                } catch {
+                    print("Error saving review completion: \(error)")
+                }
             }
         }
+    
+    // MARK: - Binder Actions
+    
+    private func handleBinderIconTap() {
+        if entryBinders.count == 1 {
+            // Direct navigation to single binder
+            selectedBinder = entryBinders.first
+            showBinderContents = true
+        } else if entryBinders.count > 1 {
+            // Show selector for multiple binders
+            showBinderSelector = true
+        }
+    }
+    
+    @ViewBuilder
+    private var binderSelectorView: some View {
+        VStack(spacing: 0) {
+            // Header
+            VStack(spacing: 12) {
+                HStack {
+                    Image(systemName: "books.vertical.fill")
+                        .font(.title2)
+                        .foregroundColor(.appGreenDark)
+                    
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Select Binder")
+                            .font(.headline)
+                            .foregroundColor(.appGreenDark)
+                        
+                        Text("This entry is in \(entryBinders.count) binders")
+                            .font(.subheadline)
+                            .foregroundColor(.secondary)
+                    }
+                    
+                    Spacer()
+                    
+                    Button("Cancel") {
+                        showBinderSelector = false
+                    }
+                    .foregroundColor(.appGreenDark)
+                }
+                
+                Divider()
+            }
+            .padding()
+            .background(Color.appGreenPale.opacity(0.1))
+            
+            // Binder list
+            List {
+                ForEach(entryBinders, id: \.id) { binder in
+                    Button(action: {
+                        selectedBinder = binder
+                        showBinderSelector = false
+                        showBinderContents = true
+                    }) {
+                        HStack(spacing: 12) {
+                            Rectangle()
+                                .fill(binder.color)
+                                .frame(width: 4, height: 32)
+                                .cornerRadius(2)
+                            
+                            VStack(alignment: .leading, spacing: 2) {
+                                Text(binder.name)
+                                    .font(.body)
+                                    .fontWeight(.medium)
+                                    .foregroundColor(.primary)
+                                
+                                if let description = binder.binderDescription, !description.isEmpty {
+                                    Text(description)
+                                        .font(.caption)
+                                        .foregroundColor(.secondary)
+                                        .lineLimit(1)
+                                }
+                            }
+                            
+                            Spacer()
+                            
+                            Image(systemName: "chevron.right")
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(.gray)
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .listStyle(.plain)
+        }
+        .navigationTitle("")
+        .navigationBarHidden(true)
+    }
 }
 
 // MARK: - Preview

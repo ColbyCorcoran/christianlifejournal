@@ -16,6 +16,7 @@ struct AddSermonNotesView: View {
     
     @EnvironmentObject var speakerStore: SpeakerStore
     @EnvironmentObject var tagStore: TagStore
+    @EnvironmentObject var binderStore: BinderStore
     
     @State private var title: String = ""
     @FocusState private var isTitleFocused: Bool
@@ -28,6 +29,8 @@ struct AddSermonNotesView: View {
     @State private var showLeaveAlert = false
     @State private var showTagPicker = false
     @State private var selectedTagIDs: Set<UUID> = []
+    @State private var showBinderPicker = false
+    @State private var selectedBinderIDs: Set<UUID> = []
     
     // Remove isNewEntry since we're not using the old pattern anymore
     
@@ -44,8 +47,8 @@ struct AddSermonNotesView: View {
         entryToEdit == nil ? "Add \(currentSection.navigationTitle) Entry" : "Edit \(currentSection.navigationTitle) Entry"
     }
     
-    // Updated init to include section parameter with default
-    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .sermonNotes) {
+    // Updated init to include section parameter with default and preselected binder
+    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .sermonNotes, preselectedBinderID: UUID? = nil) {
         self.entryToEdit = entryToEdit
         self.section = section
         self.date = entryToEdit?.date ?? Date()
@@ -55,6 +58,7 @@ struct AddSermonNotesView: View {
         _title = State(initialValue: entryToEdit?.title ?? "")
         _selectedSpeaker = State(initialValue: entryToEdit?.speaker ?? "")
         _selectedTagIDs = State(initialValue: Set(entryToEdit?.tagIDs ?? []))
+        _selectedBinderIDs = State(initialValue: preselectedBinderID != nil ? Set([preselectedBinderID!]) : Set())
         
         // Parse passages if they exist
         var initialPassages: [ScripturePassageSelection] = []
@@ -129,43 +133,49 @@ struct AddSermonNotesView: View {
                                     .focused($isTitleFocused)
                             }
                             
-                            // Scripture Passages section
-                            VStack(alignment: .leading, spacing: 8) {
-                                Text("Scripture Passages")
-                                    .font(.subheadline)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.appGreenDark)
+                            // Binder and Speaker section
+                            HStack {
+                                // Binder section
+                                binderSection
                                 
-                                Button(action: { showScripturePicker = true }) {
-                                    HStack {
-                                        if selectedPassages.isEmpty {
-                                            Text("Select Verses")
-                                                .foregroundColor(.gray)
-                                        } else {
-                                            Text("\(selectedPassages.count) selected")
-                                                .foregroundColor(.appGreenDark)
-                                                .fontWeight(.medium)
-                                        }
-                                        Spacer()
-                                        Image(systemName: "book")
-                                            .foregroundColor(.appGreenDark)
-                                    }
-                                    .padding(8)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.appGreenDark, lineWidth: 1)
-                                            .background(
-                                                RoundedRectangle(cornerRadius: 8)
-                                                    .fill(selectedPassages.isEmpty ? Color.clear : Color.appGreenPale.opacity(0.3))
-                                            )
-                                    )
-                                }
-                                .buttonStyle(PlainButtonStyle())
+                                // Speaker section
+                                speakerSection
                             }
                             
                             HStack {
-                                // Speaker section
-                                speakerSection
+                                // Scripture Passages section
+                                VStack(alignment: .leading, spacing: 8) {
+                                    Text("Scripture Passages")
+                                        .font(.subheadline)
+                                        .fontWeight(.medium)
+                                        .foregroundColor(.appGreenDark)
+                                    
+                                    Button(action: { showScripturePicker = true }) {
+                                        HStack {
+                                            if selectedPassages.isEmpty {
+                                                Text("Select Verses")
+                                                    .foregroundColor(.gray)
+                                            } else {
+                                                Text("\(selectedPassages.count) selected")
+                                                    .foregroundColor(.appGreenDark)
+                                                    .fontWeight(.medium)
+                                            }
+                                            Spacer()
+                                            Image(systemName: "book")
+                                                .foregroundColor(.appGreenDark)
+                                        }
+                                        .padding(8)
+                                        .background(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(Color.appGreenDark, lineWidth: 1)
+                                                .background(
+                                                    RoundedRectangle(cornerRadius: 8)
+                                                        .fill(selectedPassages.isEmpty ? Color.clear : Color.appGreenPale.opacity(0.3))
+                                                )
+                                        )
+                                    }
+                                    .buttonStyle(PlainButtonStyle())
+                                }
                                 
                                 // Tags section
                                 tagsSection
@@ -236,6 +246,9 @@ struct AddSermonNotesView: View {
                             entryToEdit.speaker = selectedSpeaker
                             entryToEdit.tagIDs = Array(selectedTagIDs)
                             try? modelContext.save()
+                            
+                            // Update binder associations
+                            binderStore.updateBinderAssociations(for: entryToEdit, selectedBinderIDs: selectedBinderIDs)
                         } else {
                             // Creating new entry - use the section parameter
                             let newEntry = JournalEntry(
@@ -248,6 +261,11 @@ struct AddSermonNotesView: View {
                             )
                             newEntry.tagIDs = Array(selectedTagIDs)
                             modelContext.insert(newEntry)
+                            
+                            // Add to selected binders
+                            for binderID in selectedBinderIDs {
+                                binderStore.addEntry(newEntry, to: binderID)
+                            }
                         }
                         dismiss()
                     }
@@ -280,10 +298,20 @@ struct AddSermonNotesView: View {
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
+            .sheet(isPresented: $showBinderPicker) {
+                BinderPickerSheet(selectedBinderIDs: $selectedBinderIDs)
+                    .environmentObject(binderStore)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
             .tint(Color.appGreenDark)
             .onAppear {
                 if entryToEdit == nil {
                     isTitleFocused = true
+                } else if let entry = entryToEdit {
+                    // Initialize binder selection for editing
+                    let entryBinders = binderStore.bindersContaining(journalEntryID: entry.id)
+                    selectedBinderIDs = Set(entryBinders.map { $0.id })
                 }
             }
         }
@@ -300,9 +328,11 @@ struct AddSermonNotesView: View {
             Button(action: { showSpeakerPicker = true }) {
                 HStack {
                     Text(selectedSpeaker.isEmpty ? "Select Speaker" : selectedSpeaker)
-                        .foregroundColor(selectedSpeaker.isEmpty ? .gray : .primary)
+                            .foregroundColor(selectedSpeaker.isEmpty ? .gray : .appGreenDark)
+                    
                     Spacer()
-                    Image(systemName: "person")
+                    
+                    Image(systemName: selectedSpeaker.isEmpty ? "person" : "person.fill")
                         .foregroundColor(.appGreenDark)
                 }
                 .padding(8)
@@ -315,7 +345,7 @@ struct AddSermonNotesView: View {
                         )
                 )
             }
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(.plain)
         }
     }
     
@@ -329,17 +359,14 @@ struct AddSermonNotesView: View {
             
             Button(action: { showTagPicker = true }) {
                 HStack {
-                    if selectedTagIDs.isEmpty {
-                        Text("Select Tags")
-                            .foregroundColor(.gray)
-                    } else {
-                        Text("\(selectedTagIDs.count) selected")
-                            .foregroundColor(.appGreenDark)
-                            .fontWeight(.medium)
-                    }
+                    Text(selectedTagIDs.isEmpty ? "Select Tags" : "\(selectedTagIDs.count) selected")
+                        .font(.body)
+                        .foregroundColor(selectedTagIDs.isEmpty ? .gray : .appGreenDark)
+                    
                     Spacer()
-                    Image(systemName: "tag")
-                        .foregroundColor(.appGreenDark)
+                    
+                    Image(systemName: selectedTagIDs.isEmpty ? "tag" : "tag.fill")
+                        .foregroundColor(selectedTagIDs.isEmpty ? .gray : .appGreenDark)
                 }
                 .padding(8)
                 .background(
@@ -351,17 +378,51 @@ struct AddSermonNotesView: View {
                         )
                 )
             }
-            .buttonStyle(PlainButtonStyle())
+            .buttonStyle(.plain)
+        }
+    }
+    
+    private var binderSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Binders")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.appGreenDark)
+            
+            Button(action: { showBinderPicker = true }) {
+                HStack {
+                    Text(selectedBinderIDs.isEmpty ? "Select Binders" : "\(selectedBinderIDs.count) selected")
+                        .font(.body)
+                        .foregroundColor(selectedBinderIDs.isEmpty ? .gray : .appGreenDark)
+                    
+                    Spacer()
+                    
+                    Image(systemName: selectedBinderIDs.isEmpty ? "books.vertical" : "books.vertical.fill")
+                        .foregroundColor(.appGreenDark)
+                }
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.appGreenDark, lineWidth: 1)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selectedBinderIDs.isEmpty ? Color.clear : Color.appGreenPale.opacity(0.3))
+                        )
+                )
+            }
+            .buttonStyle(.plain)
         }
     }
     
     private var notesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        ZStack(alignment: .topLeading) {
             if notes.isEmpty {
                 Text("Record your thoughts, key takeaways, and insights...")
                     .foregroundColor(.gray)
                     .italic()
                     .padding(.bottom, 4)
+                    .padding(.top, 8)
+                    .padding(.leading, 5)
             }
             
             TextEditor(text: $notes)

@@ -23,6 +23,11 @@ enum DashboardNav: Hashable {
     case prayerRequests
     case other
     
+    // Binders
+    case binderDashboard
+    case binderContents(UUID) // Binder ID
+    case binderEntryDetail(UUID, UUID) // Binder ID, Entry ID
+    
     // Entry details
     case entry(UUID) // Individual journal entry
     case prayerRequest(UUID) // Individual prayer request
@@ -48,6 +53,7 @@ struct DashboardView: View {
     @State private var showTagManagement = false
     @State private var showSpeakerManagement = false
     @State private var showPrayerCategoryManagement = false
+    @State private var showBinderManagement = false
     @State private var quickAddOption: QuickAddOption? = nil
     
     @State private var presentedSection: IdentifiableSection?
@@ -59,12 +65,15 @@ struct DashboardView: View {
     // Prayer-related stores (initialized with modelContext)
     @State private var prayerRequestStore: PrayerRequestStore?
     @State private var prayerCategoryStore: PrayerCategoryStore?
+    @State private var binderStore: BinderStore?
+    @StateObject private var dailyScriptureManager = DailyScriptureManager()
 
     // Search filter state
     @State private var selectedTagIDs: Set<UUID> = []
     @State private var selectedBooks: Set<String> = []
     @State private var selectedSections: Set<String> = []
     @State private var selectedSpeakers: Set<String> = []
+    @State private var selectedBinderIDs: Set<UUID> = []
 
     private let menuSections: [JournalSection] = [
         .personalTime,
@@ -83,7 +92,7 @@ struct DashboardView: View {
             ZStack {
                 VStack(spacing: 0) {
                     sectionCards
-                        .padding(.top, 32)
+                        .padding(.top, 15)
                         .padding(.horizontal, 20)
                         .padding(.bottom, 0)
 
@@ -97,7 +106,7 @@ struct DashboardView: View {
                             HStack {
                                 Image(systemName: "magnifyingglass")
                                     .foregroundColor(.appGreenDark)
-                                Text("Search entries and verses...")
+                                Text("Search your journal...")
                                     .foregroundColor(.appGreenDark.opacity(0.7))
                                     .font(.body)
                                 Spacer()
@@ -141,6 +150,7 @@ struct DashboardView: View {
                     selectedBooks: $selectedBooks,
                     selectedSections: $selectedSections,
                     selectedSpeakers: $selectedSpeakers,
+                    selectedBinderIDs: $selectedBinderIDs,
                     onOpenEntry: { navigation in
                         // Navigate to the entry via its section list for proper back button behavior
                         DispatchQueue.main.async {
@@ -177,13 +187,24 @@ struct DashboardView: View {
                                 path.append(.other)
                             case .entry(let entryID):
                                 path.append(.entry(entryID))
+                            case .binderDashboard:
+                                path.append(.binderDashboard)
+                            case .binderContents(let binderID):
+                                // First navigate to binder dashboard, then to specific binder
+                                path.append(.binderDashboard)
+                                path.append(.binderContents(binderID))
+                            case .binderEntryDetail(let binderID, let entryID):
+                                path.append(.binderEntryDetail(binderID, entryID))
                             }
                         }
                     }
                 )
                 .environmentObject(tagStore)
                 .environmentObject(speakerStore)
-                .environmentObject(memorizationSettings) // Add this line
+                .environmentObject(memorizationSettings)
+                .environmentObject(prayerCategoryStore ?? PrayerCategoryStore(modelContext: modelContext))
+                .environmentObject(prayerRequestStore ?? PrayerRequestStore(modelContext: modelContext))
+                .environmentObject(getBinderStore())
                 .interactiveDismissDisabled() // Prevent accidental dismissal
             }
             .sheet(isPresented: $showSettings) {
@@ -191,6 +212,7 @@ struct DashboardView: View {
                     .environmentObject(tagStore)
                     .environmentObject(speakerStore)
                     .environmentObject(getPrayerCategoryStore())
+                    .environmentObject(getBinderStore())
                     .environmentObject(memorizationSettings)
             }
             .sheet(isPresented: $showQuickAdd) {
@@ -243,8 +265,23 @@ struct DashboardView: View {
                 }
                 .environmentObject(getPrayerCategoryStore())
             }
+            .sheet(isPresented: $showBinderManagement) {
+                NavigationView {
+                    BinderManagementSettingsView()
+                        .toolbar {
+                            ToolbarItem(placement: .navigationBarTrailing) {
+                                Button("Done") {
+                                    showBinderManagement = false
+                                }
+                                .foregroundColor(.appGreenDark)
+                            }
+                        }
+                }
+                .environmentObject(getBinderStore())
+            }
             .tint(Color.appGreenDark)
             .navigationTitle("Christian Life Journal")
+            .navigationBarTitleDisplayMode(.inline)
             .onChange(of: quickAddOption) { _, newValue in
                 guard let option = newValue else { return }
                 
@@ -256,6 +293,8 @@ struct DashboardView: View {
                     showSpeakerManagement = true
                 case .addPrayerCategory:
                     showPrayerCategoryManagement = true
+                case .addBinder:
+                    showBinderManagement = true
                 case .addEntry:
                     // Entry selection is now handled directly in QuickAddMenuView
                     break
@@ -279,21 +318,26 @@ struct DashboardView: View {
                         case .personalTime:
                             PersonalTimeListView()
                                 .environmentObject(tagStore)
+                                .environmentObject(getBinderStore())
                         case .sermonNotes:
                             SermonNotesListView()
                                 .environmentObject(tagStore)
                                 .environmentObject(speakerStore)
+                                .environmentObject(getBinderStore())
                         case .scriptureMemorization:
                             ScriptureMemorizationListView()
                                 .environmentObject(tagStore)
                                 .environmentObject(memorizationSettings)
+                                .environmentObject(getBinderStore())
                         case .groupNotes:
                             GroupNotesListView()
                                 .environmentObject(tagStore)
                                 .environmentObject(speakerStore)
+                                .environmentObject(getBinderStore())
                         case .other:
                             OtherListView()
                                 .environmentObject(tagStore)
+                                .environmentObject(getBinderStore())
                         case .prayerJournal:
                             // Already handled above
                             EmptyView()
@@ -302,6 +346,7 @@ struct DashboardView: View {
                                 .environmentObject(getPrayerRequestStore())
                                 .environmentObject(getPrayerCategoryStore())
                                 .environmentObject(tagStore)
+                                .environmentObject(getBinderStore())
                         }
                     }
                 case .entryFromSection(let section, let entryUUID):
@@ -311,6 +356,7 @@ struct DashboardView: View {
                             .environmentObject(tagStore)
                             .environmentObject(speakerStore)
                             .environmentObject(memorizationSettings)
+                            .environmentObject(getBinderStore())
                             .navigationTitle(section.navigationTitle)
                     } else {
                         // Fallback view if entry not found
@@ -323,6 +369,7 @@ struct DashboardView: View {
                                 .environmentObject(tagStore)
                                 .environmentObject(speakerStore)
                                 .environmentObject(memorizationSettings)
+                                .environmentObject(getBinderStore())
                         } else {
                             // Fallback view if scripture entry not found
                             ContentUnavailableView("Scripture Entry Not Found", systemImage: "book.closed")
@@ -332,6 +379,7 @@ struct DashboardView: View {
                         .environmentObject(getPrayerRequestStore())
                         .environmentObject(getPrayerCategoryStore())
                         .environmentObject(tagStore)
+                        .environmentObject(getBinderStore())
                 case .prayerRequest(let requestUUID):
                     // Find the prayer request by UUID
                     if let request = getPrayerRequestStore().prayerRequests.first(where: { $0.id == requestUUID }) {
@@ -339,6 +387,7 @@ struct DashboardView: View {
                             .environmentObject(getPrayerRequestStore())
                             .environmentObject(getPrayerCategoryStore())
                             .environmentObject(tagStore)
+                            .environmentObject(getBinderStore())
                     } else {
                         ContentUnavailableView("Prayer Request Not Found", systemImage: "heart")
                     }
@@ -347,29 +396,62 @@ struct DashboardView: View {
                 case .personalTime:
                     PersonalTimeListView()
                         .environmentObject(tagStore)
+                        .environmentObject(getBinderStore())
                         
                 case .sermonNotes:
                     SermonNotesListView()
                         .environmentObject(tagStore)
                         .environmentObject(speakerStore)
+                        .environmentObject(getBinderStore())
                         
                 case .scriptureMemorization:
                     ScriptureMemorizationListView()
                         .environmentObject(tagStore)
                         .environmentObject(memorizationSettings)
+                        .environmentObject(getBinderStore())
                         
                 case .groupNotes:
                     GroupNotesListView()
                         .environmentObject(tagStore)
                         .environmentObject(speakerStore)
+                        .environmentObject(getBinderStore())
                         
                 case .prayerJournal:
                     PrayerJournalListView()
                         .environmentObject(tagStore)
+                        .environmentObject(getBinderStore())
                         
                 case .other:
                     OtherListView()
                         .environmentObject(tagStore)
+                        .environmentObject(getBinderStore())
+                
+                // MARK: - Binder Routes
+                case .binderDashboard:
+                    BinderDashboardView()
+                        .environmentObject(getBinderStore())
+                        .environmentObject(tagStore)
+                        .environmentObject(speakerStore)
+                        .environmentObject(memorizationSettings)
+                        .environmentObject(getPrayerCategoryStore())
+                        .environmentObject(getPrayerRequestStore())
+                        
+                case .binderContents(let binderID):
+                    if let binder = getBinderStore().binder(for: binderID) {
+                        BinderContentsView(binder: binder)
+                            .environmentObject(getBinderStore())
+                            .environmentObject(tagStore)
+                            .environmentObject(speakerStore)
+                            .environmentObject(memorizationSettings)
+                            .environmentObject(getPrayerCategoryStore())
+                            .environmentObject(getPrayerRequestStore())
+                    } else {
+                        ContentUnavailableView("Binder Not Found", systemImage: "books.vertical")
+                    }
+                    
+                case .binderEntryDetail(_, _):
+                    // This would be for future binder-specific entry navigation if needed
+                    ContentUnavailableView("Entry Detail", systemImage: "doc.text")
                 
                 // MARK: - Individual Entry Route
                 case .entry(let entryUUID):
@@ -379,12 +461,24 @@ struct DashboardView: View {
                             .environmentObject(tagStore)
                             .environmentObject(speakerStore)
                             .environmentObject(memorizationSettings)
+                            .environmentObject(getBinderStore())
                     } else {
                         ContentUnavailableView("Entry Not Found", systemImage: "doc.text")
                     }
                 }
             }
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        path.append(.binderDashboard)
+                    }) {
+                        Image(systemName: "books.vertical.fill")
+                            .font(.title2)
+                            .foregroundColor(.appGreenDark)
+                    }
+                    .accessibilityLabel("Binders")
+                }
+                
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: {
                         path.removeAll()
@@ -408,16 +502,28 @@ struct DashboardView: View {
                 if prayerCategoryStore == nil {
                     prayerCategoryStore = PrayerCategoryStore(modelContext: modelContext)
                 }
+                if binderStore == nil {
+                    binderStore = BinderStore(modelContext: modelContext)
+                }
             }
         }
         .tint(Color.appGreenDark)
     }
     
     private var sectionCards: some View {
-        VStack(spacing: 40) {
-            ForEach(menuSections, id: \.self) { section in
-                sectionCardRow(for: section)
+        VStack(spacing: 20) {
+            // Daily Scripture Card
+            DailyScriptureCard()
+                .environmentObject(dailyScriptureManager)
+                .padding(.bottom, 4)
+            
+            // Section buttons with increased spacing from top
+            VStack(spacing: 30) {
+                ForEach(menuSections, id: \.self) { section in
+                    sectionCardRow(for: section)
+                }
             }
+//            .padding(.top, 8)
         }
     }
     
@@ -439,6 +545,16 @@ struct DashboardView: View {
         } else {
             let newStore = PrayerCategoryStore(modelContext: modelContext)
             prayerCategoryStore = newStore
+            return newStore
+        }
+    }
+    
+    private func getBinderStore() -> BinderStore {
+        if let existingStore = binderStore {
+            return existingStore
+        } else {
+            let newStore = BinderStore(modelContext: modelContext)
+            binderStore = newStore
             return newStore
         }
     }
@@ -510,6 +626,81 @@ struct DashboardView: View {
                 .environmentObject(tagStore)
                 .environment(\.modelContext, modelContext)
         }
+    }
+    
+    // MARK: - Helper Views
+    
+    private var mainContent: some View {
+        VStack(spacing: 0) {
+            sectionCards
+                .padding(.top, 15)
+                .padding(.horizontal, 20)
+                .padding(.bottom, 0)
+
+            Spacer(minLength: 0)
+
+            bottomSearchArea
+        }
+    }
+    
+    private var bottomSearchArea: some View {
+        HStack(spacing: 12) {
+            searchButton
+            QuickAddMenuView(
+                isPresented: .constant(false),
+                selectedOption: $quickAddOption,
+                navigationPath: $path,
+                presentedSection: $presentedSection
+            )
+        }
+        .padding(.horizontal, 20)
+        .padding(.bottom, 34)
+    }
+    
+    private var searchButton: some View {
+        Button(action: {
+            showSearch = true
+        }) {
+            HStack(spacing: 8) {
+                Image(systemName: "magnifyingglass")
+                    .foregroundColor(.appGreenDark)
+                    .font(.system(size: 16, weight: .medium))
+                
+                Text("Search entries and verses...")
+                    .font(.body)
+                    .foregroundColor(.gray.opacity(0.8))
+                
+                Spacer()
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 12)
+            .background(
+                RoundedRectangle(cornerRadius: 25)
+                    .fill(Color.gray.opacity(0.1))
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func handleQuickAddOption(_ option: QuickAddOption?) {
+        guard let option = option else { return }
+        
+        switch option {
+        case .addTag:
+            showTagManagement = true
+        case .addSpeaker:
+            showSpeakerManagement = true
+        case .addPrayerCategory:
+            showPrayerCategoryManagement = true
+        case .addBinder:
+            showBinderManagement = true
+        case .addEntry:
+            break
+        }
+        
+        quickAddOption = nil
     }
 }
 

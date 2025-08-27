@@ -9,10 +9,20 @@ import SwiftUI
 
 struct ScripturePickerSheet: View {
     @Binding var selectedPassages: [ScripturePassageSelection]
+    let allowMultiple: Bool
     @Environment(\.dismiss) private var dismiss
+    
+    // Initializer with default parameter
+    init(selectedPassages: Binding<[ScripturePassageSelection]>, allowMultiple: Bool = true) {
+        self._selectedPassages = selectedPassages
+        self.allowMultiple = allowMultiple
+    }
     
     // Temporary passage being configured in the wheel selector
     @State private var tempPassage: ScripturePassageSelection = ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
+    
+    // Temporary selection state
+    @State private var temporarySelectedPassages: [ScripturePassageSelection] = []
     
     // Delete confirmation
     @State private var showDeleteAlert = false
@@ -61,28 +71,45 @@ struct ScripturePickerSheet: View {
         guard tempPassage.bookIndex >= 0 else { return }
         guard tempPassage.isValid(bibleBooks: bibleBooks) else { return }
         
-        // Check if this exact passage already exists
-        let exists = selectedPassages.contains { existing in
-            existing.bookIndex == tempPassage.bookIndex &&
-            existing.chapter == tempPassage.chapter &&
-            existing.verse == tempPassage.verse &&
-            existing.verseEnd == tempPassage.verseEnd
-        }
-        
-        if !exists {
-            selectedPassages.append(tempPassage)
-            // Reset wheel selector to default
+        // For single mode, replace existing passage; for multiple mode, check for duplicates
+        if allowMultiple {
+            // Check if this exact passage already exists
+            let exists = temporarySelectedPassages.contains { existing in
+                existing.bookIndex == tempPassage.bookIndex &&
+                existing.chapter == tempPassage.chapter &&
+                existing.verse == tempPassage.verse &&
+                existing.verseEnd == tempPassage.verseEnd
+            }
+            
+            if !exists {
+                temporarySelectedPassages.append(tempPassage)
+                // Reset wheel selector to default
+                tempPassage = ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
+            }
+        } else {
+            // Single mode: replace any existing passage
+            temporarySelectedPassages = [tempPassage]
             tempPassage = ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
         }
     }
     
     private func removePassage(at index: Int) {
-        guard index >= 0 && index < selectedPassages.count else { return }
-        selectedPassages.remove(at: index)
+        guard index >= 0 && index < temporarySelectedPassages.count else { return }
+        temporarySelectedPassages.remove(at: index)
+    }
+    
+    private func applySelection() {
+        selectedPassages = temporarySelectedPassages
+        dismiss()
+    }
+    
+    private func cancelSelection() {
+        dismiss()
     }
 
     var body: some View {
-        ScrollView {
+        NavigationStack {
+            ScrollView {
                 VStack(spacing: 20) {
                     // Add Passage Card
                     VStack(alignment: .leading, spacing: 16) {
@@ -189,8 +216,8 @@ struct ScripturePickerSheet: View {
                                 
                                 Button(action: addPassage) {
                                     HStack {
-                                        Image(systemName: "plus.circle.fill")
-                                        Text("Add Passage")
+                                        Image(systemName: allowMultiple ? "plus.circle.fill" : "checkmark.circle.fill")
+                                        Text(allowMultiple ? "Add Passage" : "Select Passage")
                                     }
                                     .font(.subheadline)
                                     .fontWeight(.medium)
@@ -214,17 +241,17 @@ struct ScripturePickerSheet: View {
                             .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                     )
                     
-                    // Selected passages card
-                    
+                    // Selected passages card - only show in multiple mode or when passages exist
+                    if allowMultiple {
                         VStack(alignment: .leading, spacing: 16) {
                             Text("Selected Passages")
                                 .font(.headline)
                                 .foregroundColor(.appGreenDark)
                             
                             LazyVStack(spacing: 8) {
-                                ForEach(selectedPassages.indices, id: \.self) { index in
+                                ForEach(temporarySelectedPassages.indices, id: \.self) { index in
                                     HStack {
-                                        Text("• \(selectedPassages[index].abbreviatedDisplayString(bibleBooks: bibleBooks) ?? "")")
+                                        Text("• \(temporarySelectedPassages[index].abbreviatedDisplayString(bibleBooks: bibleBooks) ?? "")")
                                             .font(.body)
                                             .foregroundColor(.primary)
                                         
@@ -255,6 +282,30 @@ struct ScripturePickerSheet: View {
                                 .fill(Color.white)
                                 .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
                         )
+                    } else if !allowMultiple && !temporarySelectedPassages.isEmpty {
+                        // Single mode: show current selection in a simpler format
+                        VStack(alignment: .leading, spacing: 12) {
+                            Text("Current Selection")
+                                .font(.headline)
+                                .foregroundColor(.appGreenDark)
+                            
+                            Text(temporarySelectedPassages.first?.displayString(bibleBooks: bibleBooks) ?? "")
+                                .font(.body)
+                                .foregroundColor(.primary)
+                                .padding(.horizontal, 12)
+                                .padding(.vertical, 8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .fill(Color.appGreenPale.opacity(0.3))
+                                )
+                        }
+                        .padding()
+                        .background(
+                            RoundedRectangle(cornerRadius: 12)
+                                .fill(Color.white)
+                                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                        )
+                    }
                     
                     
                     Spacer(minLength: 50)
@@ -263,22 +314,44 @@ struct ScripturePickerSheet: View {
                 .padding(.top, 20)
             }
             .background(Color.appWhite.ignoresSafeArea())
-        .alert("Delete Scripture Passage?", isPresented: $showDeleteAlert) {
-            Button("Delete", role: .destructive) {
-                if let index = indexToDelete {
-                    removePassage(at: index)
-                    indexToDelete = nil
+            .navigationTitle("Select Scripture")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        cancelSelection()
+                    }
+                    .foregroundColor(.appGreenDark)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Apply") {
+                        applySelection()
+                    }
+                    .foregroundColor(.appGreenDark)
+                    .fontWeight(.semibold)
                 }
             }
-            Button("Cancel", role: .cancel) {
-                indexToDelete = nil
+            .alert("Delete Scripture Passage?", isPresented: $showDeleteAlert) {
+                Button("Delete", role: .destructive) {
+                    if let index = indexToDelete {
+                        removePassage(at: index)
+                        indexToDelete = nil
+                    }
+                }
+                Button("Cancel", role: .cancel) {
+                    indexToDelete = nil
+                }
+            } message: {
+                Text("This will remove the selected Scripture passage from your entry.")
             }
-        } message: {
-            Text("This will remove the selected Scripture passage from your entry.")
-        }
-        .onAppear {
-            // Reset temp passage to default when sheet appears
-            tempPassage = ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
+            .onAppear {
+                // Initialize temporary selection with current selection
+                temporarySelectedPassages = selectedPassages
+                
+                // Reset temp passage to default when sheet appears
+                tempPassage = ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
+            }
         }
     }
 }
@@ -287,6 +360,14 @@ struct ScripturePickerSheet: View {
 
 struct ScripturePickerSheet_Previews: PreviewProvider {
     static var previews: some View {
-        ScripturePickerSheet(selectedPassages: .constant([]))
+        VStack {
+            // Multiple mode preview
+            ScripturePickerSheet(selectedPassages: .constant([]), allowMultiple: true)
+                .previewDisplayName("Multiple Mode")
+            
+            // Single mode preview  
+            ScripturePickerSheet(selectedPassages: .constant([]), allowMultiple: false)
+                .previewDisplayName("Single Mode")
+        }
     }
 }

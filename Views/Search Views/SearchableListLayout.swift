@@ -71,7 +71,7 @@ struct SearchableListLayout<Content: View>: View {
 struct SearchableEmptyState: View {
     let icon: String
     let title: String
-    let subtitle: String
+    let subtitle: String?
     let searchText: String
     let addButtonAction: (() -> Void)?
     let addButtonTitle: String?
@@ -79,7 +79,7 @@ struct SearchableEmptyState: View {
     init(
         icon: String,
         title: String,
-        subtitle: String,
+        subtitle: String? = nil,
         searchText: String = "",
         addButtonAction: (() -> Void)? = nil,
         addButtonTitle: String? = nil
@@ -103,12 +103,24 @@ struct SearchableEmptyState: View {
             Text(searchText.isEmpty ? title : "No Results")
                 .font(.headline)
                 .foregroundColor(.secondary)
-            
-            Text(searchText.isEmpty ? subtitle : "Try adjusting your search or filters")
-                .font(.subheadline)
-                .foregroundColor(.secondary)
                 .multilineTextAlignment(.center)
-                .padding(.horizontal, 40)
+            
+            // Only show subtitle if it exists and is not empty
+            if searchText.isEmpty {
+                if let subtitle = subtitle, !subtitle.isEmpty {
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 40)
+                }
+            } else {
+                Text("Try adjusting your search or filters")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 40)
+            }
             
             // Show add button only if no search and action provided
             if searchText.isEmpty, 
@@ -132,21 +144,37 @@ struct SearchableEmptyState: View {
 struct JournalEntryRow: View {
     let entry: JournalEntry
     @EnvironmentObject var tagStore: TagStore
+    @EnvironmentObject var binderStore: BinderStore
     
     var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            // Section Icon
-            Image(systemName: JournalSection(rawValue: entry.section)?.entryIconName ?? "doc.fill")
-                .font(.title3)
-                .foregroundColor(.appGreenDark)
-                .frame(width: 24)
+        HStack(alignment: .top, spacing: 0) {
+            // Binder color strips (vertical tabs)
+            let entryBinders = binderStore.bindersContaining(journalEntryID: entry.id)
+            if !entryBinders.isEmpty {
+                VStack(spacing: 2) {
+                    ForEach(Array(entryBinders.prefix(3)), id: \.id) { binder in
+                        Rectangle()
+                            .fill(binder.color)
+                            .frame(width: 4)
+                    }
+                }
+                .frame(maxHeight: .infinity)
+                .padding(.trailing, 8)
+            }
+            
+            HStack(alignment: .top, spacing: 12) {
+                // Section Icon
+                Image(systemName: JournalSection(rawValue: entry.section)?.entryIconName ?? "doc.fill")
+                    .font(.title3)
+                    .foregroundColor(.appGreenDark)
+                    .frame(width: 24)
             
             // Content
             VStack(alignment: .leading, spacing: 8) {
                 // Title and Date
                 HStack(alignment: .top) {
                     VStack(alignment: .leading, spacing: 4) {
-                        Text(entry.title.isEmpty ? "Untitled Entry" : entry.title)
+                        Text(entry.title.isEmpty ? formattedDate(entry.date) : entry.title)
                             .font(.headline)
                             .fontWeight(.medium)
                             .foregroundColor(.primary)
@@ -164,18 +192,26 @@ struct JournalEntryRow: View {
                     Spacer()
                     
                     VStack(alignment: .trailing, spacing: 2) {
-                        Text(formattedDate(entry.date))
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        if entry.title.isEmpty {
+                            Text(entry.section)
+                                .font(.caption2)
+                                .fontWeight(.medium)
+                                .foregroundColor(.appGreenDark)
+                        } else {
+                            Text(formattedDate(entry.date))
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            
+                            Text(entry.section)
+                                .font(.caption2)
+                                .fontWeight(.medium)
+                                .foregroundColor(.appGreenDark)
+                        }
                         
-                        Text(entry.section)
-                            .font(.caption2)
-                            .fontWeight(.medium)
-                            .foregroundColor(.appGreenDark)
                     }
                 }
                 
-                // Tags and Speaker
+                // Tags and Speaker (binders now shown as vertical strips)
                 let hasSpeaker = (entry.section == "Sermon Notes" || entry.section == "Group Notes") && !(entry.speaker?.isEmpty ?? true)
                 let hasTags = !entry.tagIDs.isEmpty
                 
@@ -195,9 +231,9 @@ struct JournalEntryRow: View {
                                 .foregroundColor(.appGreenDark)
                         }
                         
-                        // Tag chips
+                        // Tag chips (now with more space since binders are vertical strips)
                         if hasTags {
-                            let userTags = entry.tagIDs.prefix(hasSpeaker ? 2 : 3).compactMap { tagID in
+                            let userTags = entry.tagIDs.prefix(hasSpeaker ? 3 : 4).compactMap { tagID in
                                 tagStore.userTags.first { $0.id == tagID }
                             }
                             
@@ -214,7 +250,7 @@ struct JournalEntryRow: View {
                                     .foregroundColor(.appGreenDark)
                             }
                             
-                            let maxTags = hasSpeaker ? 2 : 3
+                            let maxTags = hasSpeaker ? 3 : 4
                             if entry.tagIDs.count > maxTags {
                                 Text("+\(entry.tagIDs.count - maxTags)")
                                     .font(.caption2)
@@ -231,6 +267,7 @@ struct JournalEntryRow: View {
             Image(systemName: "chevron.right")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundColor(.gray)
+            }
         }
         .padding(16)
         .background(

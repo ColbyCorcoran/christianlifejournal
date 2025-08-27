@@ -13,6 +13,7 @@ struct AddPrayerRequestView: View {
     @EnvironmentObject var prayerRequestStore: PrayerRequestStore
     @EnvironmentObject var prayerCategoryStore: PrayerCategoryStore
     @EnvironmentObject var tagStore: TagStore
+    @EnvironmentObject var binderStore: BinderStore
     
     // Editing support
     let requestToEdit: PrayerRequest?
@@ -26,9 +27,16 @@ struct AddPrayerRequestView: View {
     @State private var showTagPicker = false
     @State private var showCategoryPicker = false
     @State private var showScripturePicker = false
+    @State private var showBinderPicker = false
+    @State private var selectedBinderIDs: Set<UUID> = []
     
-    init(requestToEdit: PrayerRequest? = nil) {
+    init(requestToEdit: PrayerRequest? = nil, preselectedBinderID: UUID? = nil) {
         self.requestToEdit = requestToEdit
+        
+        // Initialize binder selection with preselected binder if provided
+        if let preselectedBinderID = preselectedBinderID {
+            _selectedBinderIDs = State(initialValue: Set([preselectedBinderID]))
+        }
     }
     
     var body: some View {
@@ -47,9 +55,7 @@ struct AddPrayerRequestView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
                     requestDetailsCard
-                    categorySelectionCard
-                    scriptureSelectionCard
-                    tagsSelectionCard
+                    requestDescriptionCard
                     Spacer(minLength: 100)
                 }
                 .padding(.horizontal, 20)
@@ -94,6 +100,118 @@ struct AddPrayerRequestView: View {
                 .presentationDetents([.large, .medium])
                 .presentationDragIndicator(.visible)
         }
+        .sheet(isPresented: $showBinderPicker) {
+            BinderPickerSheet(selectedBinderIDs: $selectedBinderIDs)
+                .environmentObject(binderStore)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
+        }
+    }
+    
+    // MARK: - Selector Buttons
+    
+    @ViewBuilder
+    private var binderSelectorButton: some View {
+        Button(action: { showBinderPicker = true }) {
+            HStack {
+                Text(selectedBinderIDs.isEmpty ? "Binders" : "\(selectedBinderIDs.count) selected")
+                    .font(.body)
+                    .foregroundColor(selectedBinderIDs.isEmpty ? .gray : .appGreenDark)
+                
+                Spacer()
+                
+                Image(systemName: selectedBinderIDs.isEmpty ? "books.vertical" : "books.vertical.fill")
+                    .foregroundColor(.appGreenDark)
+            }
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.appGreenDark, lineWidth: 1)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(selectedBinderIDs.isEmpty ? Color.clear : Color.appGreenPale.opacity(0.3))
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+    
+    @ViewBuilder
+    private var categorySelectorButton: some View {
+        Button(action: { showCategoryPicker = true }) {
+            HStack {
+                Text(selectedCategoryIDs.isEmpty ? "Categories" : "\(selectedCategoryIDs.count) selected")
+                    .font(.body)
+                    .foregroundColor(selectedCategoryIDs.isEmpty ? .gray : .appGreenDark)
+                
+                Spacer()
+                
+                Image(systemName: selectedCategoryIDs.isEmpty ? "folder" : "folder.fill")
+                    .foregroundColor(.appGreenDark)
+            }
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.appGreenDark, lineWidth: 1)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(selectedCategoryIDs.isEmpty ? Color.clear : Color.appGreenPale.opacity(0.3))
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+    
+    @ViewBuilder
+    private var scriptureSelectorButton: some View {
+        Button(action: { showScripturePicker = true }) {
+            HStack {
+                Text(selectedPassages.isEmpty ? "Verses" : "\(selectedPassages.count) selected")
+                    .font(.body)
+                    .foregroundColor(selectedPassages.isEmpty ? .gray : .appGreenDark)
+                
+                Spacer()
+                
+                Image(systemName: selectedPassages.isEmpty ? "book" : "book.fill")
+                    .foregroundColor(.appGreenDark)
+            }
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.appGreenDark, lineWidth: 1)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(selectedPassages.isEmpty ? Color.clear : Color.appGreenPale.opacity(0.3))
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+    }
+    
+    @ViewBuilder
+    private var tagsSelectorButton: some View {
+        Button(action: { showTagPicker = true }) {
+            HStack {
+                Text(selectedTagIDs.isEmpty ? "Tags" : "\(selectedTagIDs.count) selected")
+                    .font(.body)
+                    .foregroundColor(selectedTagIDs.isEmpty ? .gray : .appGreenDark)
+                
+                Spacer()
+                
+                Image(systemName: selectedTagIDs.isEmpty ? "tag" : "tag.fill")
+                    .foregroundColor(selectedTagIDs.isEmpty ? .gray : .appGreenDark)
+            }
+            .padding(8)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .stroke(Color.appGreenDark, lineWidth: 1)
+                    .background(
+                        RoundedRectangle(cornerRadius: 8)
+                            .fill(selectedTagIDs.isEmpty ? Color.clear : Color.appGreenPale.opacity(0.3))
+                    )
+            )
+        }
+        .buttonStyle(.plain)
     }
     
     // MARK: - Request Details Card
@@ -116,10 +234,33 @@ struct AddPrayerRequestView: View {
                 }
             }
             
-            VStack(alignment: .leading, spacing: 12) {
-                titleField
-                descriptionField
+            titleField
+            
+            // 2x2 Grid of selectors like in the screenshot
+            VStack(spacing: 12) {
+                HStack(spacing: 12) {
+                    binderSelectorButton
+                    categorySelectorButton
+                }
+                
+                HStack(spacing: 12) {
+                    scriptureSelectorButton
+                    tagsSelectorButton
+                }
             }
+        }
+        .padding(16)
+        .background(cardBackground)
+    }
+    
+    @ViewBuilder
+    private var requestDescriptionCard: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Text("Prayer Request")
+                .font(.headline)
+                .foregroundColor(.appGreenDark)
+            
+            descriptionField
         }
         .padding(16)
         .background(cardBackground)
@@ -155,7 +296,7 @@ struct AddPrayerRequestView: View {
                         RoundedRectangle(cornerRadius: 8)
                             .fill(Color.appGreenPale.opacity(0.1))
                     )
-                    .frame(minHeight: 120)
+                    .frame(minHeight: 275)
                 
                 TextEditor(text: $requestDescription)
                     .padding(8)
@@ -273,6 +414,37 @@ struct AddPrayerRequestView: View {
         .padding(.top, 8)
     }
     
+    // MARK: - Binder Selection
+    
+    @ViewBuilder
+    private var binderSelectionCard: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            Text("Binders")
+                .font(.headline)
+                .foregroundColor(.appGreenDark)
+            
+            Button(action: { showBinderPicker = true }) {
+                HStack {
+                    if selectedBinderIDs.isEmpty {
+                        Text("Select Binders")
+                            .foregroundColor(.gray)
+                    } else {
+                        Text("\(selectedBinderIDs.count) selected")
+                            .foregroundColor(.appGreenDark)
+                            .fontWeight(.medium)
+                    }
+                    Spacer()
+                    Image(systemName: "books.vertical")
+                        .foregroundColor(.appGreenDark)
+                }
+                .padding()
+                .background(textFieldBackground)
+            }
+            .buttonStyle(PlainButtonStyle())
+        }
+        .padding()
+        .background(cardBackground)
+    }
     
     // MARK: - Reusable Styling
     
@@ -378,6 +550,10 @@ struct AddPrayerRequestView: View {
             selectedCategoryIDs = Set(request.categoryIDs)
             selectedTagIDs = Set(request.tagIDs)
             
+            // Initialize binder selection for editing
+            let requestBinders = binderStore.bindersContaining(prayerRequestID: request.id)
+            selectedBinderIDs = Set(requestBinders.map { $0.id })
+            
             // Parse scripture passages if they exist
             if let scriptureString = request.scripture, !scriptureString.isEmpty {
                 let components = scriptureString.components(separatedBy: ";")
@@ -427,6 +603,9 @@ struct AddPrayerRequestView: View {
             existingRequest.scripture = passagesString.isEmpty ? nil : passagesString
             
             prayerRequestStore.updatePrayerRequest(existingRequest)
+            
+            // Update binder associations
+            binderStore.updateBinderAssociations(for: existingRequest, selectedBinderIDs: selectedBinderIDs)
         } else {
             // Create new request
             let newRequest = PrayerRequest(
@@ -438,6 +617,11 @@ struct AddPrayerRequestView: View {
             )
             
             prayerRequestStore.addPrayerRequest(newRequest)
+            
+            // Add to selected binders
+            for binderID in selectedBinderIDs {
+                binderStore.addPrayerRequest(newRequest, toBinder: binderID)
+            }
         }
         
         dismiss()

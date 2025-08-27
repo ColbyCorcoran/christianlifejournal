@@ -12,22 +12,10 @@ struct PrayerRequestDetailView: View {
     @EnvironmentObject var prayerRequestStore: PrayerRequestStore
     @EnvironmentObject var prayerCategoryStore: PrayerCategoryStore
     @EnvironmentObject var tagStore: TagStore
-    @EnvironmentObject var speakerStore: SpeakerStore
-    @EnvironmentObject var memorizationSettings: MemorizationSettings
-    @EnvironmentObject var binderStore: BinderStore
     
     let prayerRequest: PrayerRequest
-    let showBinderFunctionality: Bool
-    
-    init(prayerRequest: PrayerRequest, showBinderFunctionality: Bool = true) {
-        self.prayerRequest = prayerRequest
-        self.showBinderFunctionality = showBinderFunctionality
-    }
     
     @State private var showEditSheet = false
-    @State private var showBinderContents = false
-    @State private var showBinderSelector = false
-    @State private var selectedBinder: Binder?
     @State private var showAnswerModal = false
     @State private var showCelebrationModal = false
     @State private var answerDate = Date()
@@ -43,15 +31,6 @@ struct PrayerRequestDetailView: View {
         return scripture.components(separatedBy: ";")
             .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
             .filter { !$0.isEmpty }
-    }
-    
-    // Computed properties for binder context
-    private var entryBinders: [Binder] {
-        binderStore.bindersContaining(prayerRequestID: prayerRequest.id)
-    }
-    
-    private var isInBinders: Bool {
-        !entryBinders.isEmpty
     }
     
     // Organization section for categories, tags, and scripture
@@ -151,7 +130,7 @@ struct PrayerRequestDetailView: View {
             }
         }
     }
-
+    
     var body: some View {
         ZStack {
             Color.appWhite.ignoresSafeArea()
@@ -185,41 +164,135 @@ struct PrayerRequestDetailView: View {
                                 .foregroundColor(.primary)
                         }
                         
-                        // Categories, Tags, and Scripture within the same card
-                        organizationSection
-                    }
-                    .padding(16)
-                    .frame(maxWidth: .infinity)
-                    .background(
-                        RoundedRectangle(cornerRadius: 12)
-                            .fill(Color.white)
-                            .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                    )
-                    
-                    // Description Card
-                    if !prayerRequest.requestDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            Text("Details")
-                                .font(.headline)
-                                .foregroundColor(.appGreenDark)
-                            
-                            Text(prayerRequest.requestDescription)
-                                .font(.body)
-                                .foregroundColor(.primary)
-                                .padding(12)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 8)
-                                        .fill(Color.appGreenPale.opacity(0.2))
-                                )
+                        // Categories, Scripture, and Tags Card
+                        let categoryNames = prayerRequest.categoryIDs.compactMap { categoryID in
+                            prayerCategoryStore.categoryName(for: categoryID)
                         }
-                        .padding(16)
-                        .frame(maxWidth: .infinity)
-                        .background(
-                            RoundedRectangle(cornerRadius: 12)
-                                .fill(Color.white)
-                                .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
-                        )
+                        let userTags = prayerRequest.tagIDs.compactMap { tagID in
+                            tagStore.userTags.first { $0.id == tagID }
+                        }
+                        let hasCategories = !categoryNames.isEmpty
+                        let hasTags = !userTags.isEmpty
+                        let hasScripture = prayerRequest.scripture?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+                        
+                        if hasCategories || hasTags || hasScripture {
+                            VStack(alignment: .leading, spacing: 16) {
+                                
+                                HStack {
+                                    
+                                    // Categories section
+                                    if hasCategories {
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text(categoryNames.count == 1 ? "Category" : "Categories")
+                                                .font(.subheadline)
+                                                .fontWeight(.medium)
+                                                .foregroundColor(.appGreenDark)
+                                            
+                                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], alignment: .leading, spacing: 8) {
+                                                ForEach(categoryNames, id: \.self) { categoryName in
+                                                    Text(categoryName)
+                                                        .font(.caption)
+                                                        .fontWeight(.medium)
+                                                        .padding(.horizontal, 12)
+                                                        .padding(.vertical, 6)
+                                                        .background(
+                                                            RoundedRectangle(cornerRadius: 16)
+                                                                .fill(Color.appGreenLight.opacity(0.3))
+                                                        )
+                                                        .foregroundColor(.appGreenDark)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                    // Tags section
+                                    if hasTags {
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text("Tags")
+                                                .font(.subheadline)
+                                                .fontWeight(.medium)
+                                                .foregroundColor(.appGreenDark)
+                                            
+                                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], alignment: .leading, spacing: 8) {
+                                                ForEach(userTags, id: \.id) { tag in
+                                                    Text(tag.name)
+                                                        .font(.caption)
+                                                        .fontWeight(.medium)
+                                                        .padding(.horizontal, 6)
+                                                        .padding(.vertical, 6)
+                                                        .background(
+                                                            RoundedRectangle(cornerRadius: 16)
+                                                                .fill(Color.appGreenMedium.opacity(0.3))
+                                                        )
+                                                        .foregroundColor(.appGreenDark)
+                                                }
+                                            }
+                                        }
+                                    }
+                                    
+                                }
+                                
+                                    // Scripture section
+                                    if hasScripture, let scripture = prayerRequest.scripture {
+                                        VStack(alignment: .leading, spacing: 8) {
+                                            Text(scripturePassages.count == 1 ? "Scripture Passage" : "Scripture Passages")
+                                                .font(.subheadline)
+                                                .fontWeight(.medium)
+                                                .foregroundColor(.appGreenDark)
+                                            
+                                            LazyVGrid(columns: [GridItem(.adaptive(minimum: 120))], alignment: .leading, spacing: 8) {
+                                                ForEach(scripturePassages, id: \.self) { passage in
+                                                    Text(passage.trimmingCharacters(in: .whitespacesAndNewlines))
+                                                        .font(.caption)
+                                                        .fontWeight(.medium)
+                                                        .padding(.horizontal, 6)
+                                                        .padding(.vertical, 6)
+                                                        .background(
+                                                            RoundedRectangle(cornerRadius: 16)
+                                                                .fill(Color.appGreen.opacity(0.2))
+                                                        )
+                                                        .foregroundColor(.appGreenDark)
+                                                }
+                                            }
+                                        }
+                                    }
+                                
+                            }
+                        }
+                            .padding(16)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white)
+                                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                            )
+                        
+                        // Description Card
+                        if !prayerRequest.requestDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Details")
+                                    .font(.headline)
+                                    .foregroundColor(.appGreenDark)
+                                
+                                Text(prayerRequest.requestDescription)
+                                    .font(.body)
+                                    .foregroundColor(.primary)
+                                    .padding(12)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .background(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(Color.appGreenPale.opacity(0.2))
+                                    )
+                            }
+                            .padding(16)
+                            .frame(maxWidth: .infinity)
+                            .background(
+                                RoundedRectangle(cornerRadius: 12)
+                                    .fill(Color.white)
+                                    .shadow(color: .black.opacity(0.1), radius: 4, x: 0, y: 2)
+                            )
+                        }
+                        
                     }
                     
                     // Answer Status Card
@@ -365,24 +438,10 @@ struct PrayerRequestDetailView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
-                HStack(spacing: 16) {
-                    // Contextual binder icon - only show if entry is in binders and binder functionality is enabled
-                    if showBinderFunctionality && isInBinders {
-                        Button(action: {
-                            handleBinderIconTap()
-                        }) {
-                            Image(systemName: "books.vertical.fill")
-                                .font(.system(size: 16, weight: .medium))
-                        }
-                        .foregroundColor(.appGreenDark)
-                        .accessibilityLabel(entryBinders.count == 1 ? "View Binder" : "View Binders")
-                    }
-                    
-                    Button("Edit") {
-                        showEditSheet = true
-                    }
-                    .foregroundColor(.appGreenDark)
+                Button("Edit") {
+                    showEditSheet = true
                 }
+                .foregroundColor(.appGreenDark)
             }
         }
         .sheet(isPresented: $showEditSheet) {
@@ -406,32 +465,6 @@ struct PrayerRequestDetailView: View {
                 }
             )
         }
-        .sheet(item: Binding<Binder?>(
-            get: { showBinderFunctionality && showBinderContents ? selectedBinder : nil },
-            set: { _ in showBinderContents = false; selectedBinder = nil }
-        )) { binder in
-            NavigationStack {
-                BinderContentsView(binder: binder)
-                    .environmentObject(binderStore)
-                    .environmentObject(tagStore)
-                    .environmentObject(speakerStore)
-                    .environmentObject(memorizationSettings)
-                    .environmentObject(prayerCategoryStore)
-                    .environmentObject(prayerRequestStore)
-                    .navigationTitle("")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .navigationBarHidden(true)
-            }
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: Binding(
-            get: { showBinderFunctionality && showBinderSelector },
-            set: { showBinderSelector = $0 }
-        )) {
-            NavigationView {
-                binderSelectorView
-            }
-        }
         .overlay {
             if showCelebrationModal {
                 PrayerAnsweredCelebrationView(
@@ -440,97 +473,6 @@ struct PrayerRequestDetailView: View {
                 )
             }
         }
-    }
-    
-    // MARK: - Binder Actions
-    
-    private func handleBinderIconTap() {
-        if entryBinders.count == 1 {
-            // Direct navigation to single binder
-            selectedBinder = entryBinders.first
-            showBinderContents = true
-        } else if entryBinders.count > 1 {
-            // Show selector for multiple binders
-            showBinderSelector = true
-        }
-    }
-    
-    @ViewBuilder
-    private var binderSelectorView: some View {
-        VStack(spacing: 0) {
-            // Header
-            VStack(spacing: 12) {
-                HStack {
-                    Image(systemName: "books.vertical.fill")
-                        .font(.title2)
-                        .foregroundColor(.appGreenDark)
-                    
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Select Binder")
-                            .font(.headline)
-                            .foregroundColor(.appGreenDark)
-                        
-                        Text("This entry is in \(entryBinders.count) binders")
-                            .font(.subheadline)
-                            .foregroundColor(.secondary)
-                    }
-                    
-                    Spacer()
-                    
-                    Button("Cancel") {
-                        showBinderSelector = false
-                    }
-                    .foregroundColor(.appGreenDark)
-                }
-                
-                Divider()
-            }
-            .padding()
-            .background(Color.appGreenPale.opacity(0.1))
-            
-            // Binder list
-            List {
-                ForEach(entryBinders, id: \.id) { binder in
-                    Button(action: {
-                        selectedBinder = binder
-                        showBinderSelector = false
-                        showBinderContents = true
-                    }) {
-                        HStack(spacing: 12) {
-                            Rectangle()
-                                .fill(binder.color)
-                                .frame(width: 4, height: 32)
-                                .cornerRadius(2)
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(binder.name)
-                                    .font(.body)
-                                    .fontWeight(.medium)
-                                    .foregroundColor(.primary)
-                                
-                                if let description = binder.binderDescription, !description.isEmpty {
-                                    Text(description)
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                        .lineLimit(1)
-                                }
-                            }
-                            
-                            Spacer()
-                            
-                            Image(systemName: "chevron.right")
-                                .font(.system(size: 12, weight: .medium))
-                                .foregroundColor(.gray)
-                        }
-                        .padding(.vertical, 4)
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .listStyle(.plain)
-        }
-        .navigationTitle("")
-        .navigationBarHidden(true)
     }
 }
 
@@ -545,9 +487,9 @@ struct PrayerRequestDetailView_Previews: PreviewProvider {
                 dateAdded: Calendar.current.date(byAdding: .day, value: -7, to: Date()) ?? Date(),
                 isAnswered: false
             ))
-                .environmentObject(previewPrayerRequestStore)
-                .environmentObject(previewPrayerCategoryStore)
-                .environmentObject(previewTagStore)
+            .environmentObject(previewPrayerRequestStore)
+            .environmentObject(previewPrayerCategoryStore)
+            .environmentObject(previewTagStore)
         }
     }
 }

@@ -15,10 +15,26 @@ struct ScriptureListRow: View {
     let showPhase: Bool
     let onDelete: () -> Void
     let onEdit: () -> Void
+    @EnvironmentObject var binderStore: BinderStore
 
     var body: some View {
         NavigationLink(value: DashboardNav.scriptureEntry(entry.id)) {
-            HStack {
+            HStack(spacing: 0) {
+                // Binder color strips (vertical tabs)
+                let entryBinders = binderStore.bindersContaining(scriptureEntryID: entry.id)
+                if !entryBinders.isEmpty {
+                    VStack(spacing: 2) {
+                        ForEach(Array(entryBinders.prefix(3)), id: \.id) { binder in
+                            Rectangle()
+                                .fill(binder.color)
+                                .frame(width: 4)
+                        }
+                    }
+                    .frame(maxHeight: .infinity)
+                    .padding(.trailing, 8)
+                }
+                
+                HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(entry.bibleReference)
                         .font(.headline)
@@ -37,6 +53,8 @@ struct ScriptureListRow: View {
                                 .font(.caption)
                                 .foregroundColor(.appGreenDark)
                         }
+                        
+                        // Binders now shown as vertical color strips on the left
                     }
                 }
                 
@@ -44,6 +62,7 @@ struct ScriptureListRow: View {
                 
                 // Completion indicator using engine logic
                 CompletionStatusView(entry: entry)
+                }
             }
             .padding(.vertical, 4)
         }

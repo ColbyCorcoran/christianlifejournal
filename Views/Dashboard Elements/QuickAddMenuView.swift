@@ -11,6 +11,7 @@ enum QuickAddOption {
     case addTag
     case addSpeaker  
     case addPrayerCategory
+    case addBinder
     case addEntry
 }
 
@@ -72,24 +73,80 @@ struct QuickAddMenuView: View {
                         selectedOption = .addTag
                         isPresented = false
                     }) {
-                        Label("Tags", systemImage: "tag")
-                            .foregroundColor(.primary)
+                        HStack {
+                            Image(systemName: "tag.fill")
+                                .foregroundColor(.appGreenDark)
+                                .font(.system(size: 18, weight: .medium))
+                                .frame(width: 24, height: 24)
+                            
+                            Text("Tags")
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
                     }
                     
                     Button(action: {
                         selectedOption = .addSpeaker
                         isPresented = false
                     }) {
-                        Label("Speakers", systemImage: "person")
-                            .foregroundColor(.primary)
+                        HStack {
+                            Image(systemName: "person.fill")
+                                .foregroundColor(.appGreenDark)
+                                .font(.system(size: 18, weight: .medium))
+                                .frame(width: 24, height: 24)
+                            
+                            Text("Speakers")
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
                     }
                     
                     Button(action: {
                         selectedOption = .addPrayerCategory
                         isPresented = false
                     }) {
-                        Label("Prayer Categories", systemImage: "folder")
-                            .foregroundColor(.primary)
+                        HStack {
+                            Image(systemName: "folder.fill")
+                                .foregroundColor(.appGreenDark)
+                                .font(.system(size: 18, weight: .medium))
+                                .frame(width: 24, height: 24)
+                            
+                            Text("Prayer Categories")
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
+                    }
+                    
+                    Button(action: {
+                        selectedOption = .addBinder
+                        isPresented = false
+                    }) {
+                        HStack {
+                            Image(systemName: "books.vertical.fill")
+                                .foregroundColor(.appGreenDark)
+                                .font(.system(size: 18, weight: .medium))
+                                .frame(width: 24, height: 24)
+                            
+                            Text("Binders")
+                                .font(.body)
+                                .fontWeight(.medium)
+                                .foregroundColor(.primary)
+                            
+                            Spacer()
+                        }
+                        .padding(.vertical, 4)
                     }
                 }
                 

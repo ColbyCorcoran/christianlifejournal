@@ -15,6 +15,7 @@ struct TagPickerSheet: View {
     @State private var searchText = ""
     @State private var newTagName = ""
     @State private var showingAddTag = false
+    @State private var temporarySelectedTagIDs: Set<UUID> = []
     
     private var filteredTags: [Tag] {
         let allTags = tagStore.userTags
@@ -28,11 +29,20 @@ struct TagPickerSheet: View {
     }
     
     private func toggleTag(_ tag: Tag) {
-        if selectedTagIDs.contains(tag.id) {
-            selectedTagIDs.remove(tag.id)
+        if temporarySelectedTagIDs.contains(tag.id) {
+            temporarySelectedTagIDs.remove(tag.id)
         } else {
-            selectedTagIDs.insert(tag.id)
+            temporarySelectedTagIDs.insert(tag.id)
         }
+    }
+    
+    private func applySelection() {
+        selectedTagIDs = temporarySelectedTagIDs
+        dismiss()
+    }
+    
+    private func cancelSelection() {
+        dismiss()
     }
     
     private func addNewTag() {
@@ -43,9 +53,9 @@ struct TagPickerSheet: View {
         if !tagStore.userTags.contains(where: { $0.name.lowercased() == trimmedName.lowercased() }) {
             tagStore.addUserTag(trimmedName)
             
-            // Find the newly added tag and select it
+            // Find the newly added tag and select it temporarily
             if let newTag = tagStore.userTags.first(where: { $0.name.lowercased() == trimmedName.lowercased() }) {
-                selectedTagIDs.insert(newTag.id)
+                temporarySelectedTagIDs.insert(newTag.id)
             }
             
             newTagName = ""
@@ -54,7 +64,8 @@ struct TagPickerSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        NavigationStack {
+            VStack(spacing: 0) {
                 // Search section
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Find Tags")
@@ -100,8 +111,8 @@ struct TagPickerSheet: View {
                                 ForEach(filteredTags, id: \.id) { tag in
                                     Button(action: { toggleTag(tag) }) {
                                         HStack {
-                                            Image(systemName: selectedTagIDs.contains(tag.id) ? "checkmark.circle.fill" : "circle")
-                                                .foregroundColor(selectedTagIDs.contains(tag.id) ? .appGreenDark : .gray)
+                                            Image(systemName: temporarySelectedTagIDs.contains(tag.id) ? "checkmark.circle.fill" : "circle")
+                                                .foregroundColor(temporarySelectedTagIDs.contains(tag.id) ? .appGreenDark : .gray)
                                                 .font(.title3)
                                             
                                             Text(tag.name)
@@ -115,7 +126,7 @@ struct TagPickerSheet: View {
                                         .padding(.vertical, 12)
                                         .background(
                                             RoundedRectangle(cornerRadius: 8)
-                                                .fill(selectedTagIDs.contains(tag.id) ? Color.appGreenPale.opacity(0.3) : Color.clear)
+                                                .fill(temporarySelectedTagIDs.contains(tag.id) ? Color.appGreenPale.opacity(0.3) : Color.clear)
                                         )
                                     }
                                     .buttonStyle(PlainButtonStyle())
@@ -189,10 +200,32 @@ struct TagPickerSheet: View {
                 .padding(.bottom, 20)
             }
             .background(Color.appWhite.ignoresSafeArea())
-        .onAppear {
-            // Focus add tag if no tags exist
-            if tagStore.userTags.isEmpty {
-                showingAddTag = true
+            .navigationTitle("Select Tags")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        cancelSelection()
+                    }
+                    .foregroundColor(.appGreenDark)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Apply") {
+                        applySelection()
+                    }
+                    .foregroundColor(.appGreenDark)
+                    .fontWeight(.semibold)
+                }
+            }
+            .onAppear {
+                // Initialize temporary selection with current selection
+                temporarySelectedTagIDs = selectedTagIDs
+                
+                // Focus add tag if no tags exist
+                if tagStore.userTags.isEmpty {
+                    showingAddTag = true
+                }
             }
         }
     }

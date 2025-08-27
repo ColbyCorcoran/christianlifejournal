@@ -10,7 +10,9 @@ import SwiftData
 
 struct PrayerJournalListView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var tagStore: TagStore
+    @EnvironmentObject var binderStore: BinderStore
     
     // State for filtering
     @State private var searchText = ""
@@ -19,6 +21,17 @@ struct PrayerJournalListView: View {
     
     // State for sheets
     @State private var showAddSheet = false
+    
+    // Bulk selection state
+    @State private var isEditing = false
+    @State private var selectedEntries: Set<JournalEntry> = []
+    @State private var showBulkActions = false
+    @State private var showBulkBinderPicker = false
+    @State private var showBulkTagPicker = false
+    @State private var showDeleteConfirmation = false
+    @State private var bulkSelectedTagIDs: Set<UUID> = []
+    @State private var showSuccessAlert = false
+    @State private var successMessage = ""
     
     // SwiftData query for Prayer Journal entries
     @Query(
@@ -88,7 +101,7 @@ struct PrayerJournalListView: View {
     
     var body: some View {
         SearchableListLayout(
-            navigationTitle: "Prayer Journal",
+            navigationTitle: "",
             searchText: $searchText,
             searchPlaceholder: "Search prayer journal entries...",
             filterGroups: filterGroups,
@@ -96,28 +109,112 @@ struct PrayerJournalListView: View {
             addButtonLabel: "Add Prayer Journal Entry"
         ) {
             // Content area
-            if filteredEntries.isEmpty {
-                SearchableEmptyState(
-                    icon: "book.pages.fill",
-                    title: "No Prayer Journal Entries",
-                    subtitle: "Document prayer thoughts and spiritual insights",
-                    searchText: searchText,
-                    addButtonAction: { showAddSheet = true },
-                    addButtonTitle: "Add Prayer Journal Entry"
-                )
-            } else {
-                ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                // Header
+                VStack(alignment: .leading, spacing: 8) {
+                    HStack {
+                        Image(systemName: "book.pages.fill")
+                            .font(.title2)
+                            .foregroundColor(.appGreenDark)
+                        Text("Prayer Journal")
+                            .font(.title)
+                            .fontWeight(.bold)
+                            .foregroundColor(.appGreenDark)
+                    }
+                    
+                    Text("Document prayer thoughts and spiritual insights")
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                }
+                .padding(.horizontal)
+                
+                // Content based on entries
+                if filteredEntries.isEmpty {
+                    HStack {
+                        Spacer()
+                        SearchableEmptyState(
+                            icon: "book.pages",
+                            title: "No Entries",
+                            searchText: searchText,
+                            addButtonAction: { showAddSheet = true },
+                            addButtonTitle: "Add Prayer Journal Entry"
+                        )
+                        Spacer()
+                    }
+                } else {
                     LazyVStack(spacing: 16) {
                         ForEach(filteredEntries) { entry in
-                            NavigationLink(value: DashboardNav.entry(entry.id)) {
-                                JournalEntryRow(entry: entry)
-                                    .environmentObject(tagStore)
+                            if isEditing {
+                                HStack {
+                                    Image(systemName: selectedEntries.contains(entry) ? "checkmark.circle.fill" : "circle")
+                                        .foregroundColor(selectedEntries.contains(entry) ? .appGreenDark : .gray)
+                                        .font(.title3)
+                                    
+                                    JournalEntryRow(entry: entry)
+                                        .environmentObject(tagStore)
+                                        .environmentObject(binderStore)
+                                }
+                                .contentShape(Rectangle())
+                                .onTapGesture {
+                                    if selectedEntries.contains(entry) {
+                                        selectedEntries.remove(entry)
+                                    } else {
+                                        selectedEntries.insert(entry)
+                                    }
+                                }
+                            } else {
+                                NavigationLink(value: DashboardNav.entry(entry.id)) {
+                                    JournalEntryRow(entry: entry)
+                                        .environmentObject(tagStore)
+                                        .environmentObject(binderStore)
+                                }
+                                .buttonStyle(.plain)
                             }
-                            .buttonStyle(.plain)
                         }
                     }
                     .padding()
                     .padding(.bottom, 120) // Space for search bar
+                }
+                
+                Spacer(minLength: 120) // Space for search bar
+            }
+            .padding(.top)
+        }
+        .navigationBarBackButtonHidden()
+        .toolbar {
+            if !isEditing {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button(action: {
+                        dismiss()
+                    }) {
+                        HStack(spacing: 6) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 17, weight: .medium))
+                            Text("Back")
+                        }
+                    }
+                    .foregroundColor(.appGreenDark)
+                }
+            }
+            
+            ToolbarItem(placement: .navigationBarTrailing) {
+                if isEditing {
+                    HStack {
+                        let selectedCount = selectedEntries.count
+                        if selectedCount > 0 {
+                            Button("Actions (\(selectedCount))") {
+                                showBulkActions = true
+                            }
+                            .foregroundColor(.appGreenDark)
+                        }
+                        
+                        Button("Done") {
+                            isEditing = false
+                            selectedEntries.removeAll()
+                        }
+                    }
+                } else {
+                    Button("Select") { isEditing = true }
                 }
             }
         }
@@ -125,6 +222,125 @@ struct PrayerJournalListView: View {
             AddEntryView(section: .prayerJournal)
                 .environmentObject(tagStore)
                 .environment(\.modelContext, modelContext)
+        }
+        .sheet(isPresented: $showBulkActions) {
+            JournalBulkActionsSheet(
+                selectedCount: selectedEntries.count,
+                isPresented: $showBulkActions,
+                onAddTags: { showBulkTagPicker = true },
+                onAddToBinders: { showBulkBinderPicker = true },
+                onDelete: { showDeleteConfirmation = true }
+            )
+        }
+        .sheet(isPresented: $showBulkBinderPicker) {
+            BulkBinderPickerSheet(
+                selectedItems: .journalEntries(Array(selectedEntries)),
+                isPresented: $showBulkBinderPicker,
+                onComplete: {
+                    selectedEntries.removeAll()
+                    isEditing = false
+                }
+            )
+            .environmentObject(binderStore)
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showBulkTagPicker) {
+            NavigationStack {
+                VStack {
+                    // Custom navigation bar
+                    HStack {
+                        Button("Cancel") {
+                            bulkSelectedTagIDs.removeAll()
+                            showBulkTagPicker = false
+                        }
+                        .foregroundColor(.appGreenDark)
+                        
+                        Spacer()
+                        
+                        Text("Add Tags")
+                            .font(.headline)
+                            .fontWeight(.semibold)
+                        
+                        Spacer()
+                        
+                        Button("Apply") {
+                            // Apply tags when Apply is pressed
+                            if !bulkSelectedTagIDs.isEmpty {
+                                for entry in selectedEntries {
+                                    for tagID in bulkSelectedTagIDs {
+                                        if !entry.tagIDs.contains(tagID) {
+                                            entry.tagIDs.append(tagID)
+                                        }
+                                    }
+                                }
+                                
+                                do {
+                                    try modelContext.save()
+                                    
+                                    // Show success message
+                                    let tagCount = bulkSelectedTagIDs.count
+                                    let entryCount = selectedEntries.count
+                                    let tagText = tagCount == 1 ? "tag" : "tags"
+                                    let entryText = entryCount == 1 ? "entry" : "entries"
+                                    
+                                    successMessage = "Added \(tagCount) \(tagText) to \(entryCount) \(entryText)"
+                                    showSuccessAlert = true
+                                    
+                                } catch {
+                                    print("Error saving bulk tag changes: \(error)")
+                                }
+                                
+                                bulkSelectedTagIDs.removeAll()
+                                selectedEntries.removeAll()
+                                isEditing = false
+                            }
+                            showBulkTagPicker = false
+                        }
+                        .disabled(bulkSelectedTagIDs.isEmpty)
+                        .foregroundColor(bulkSelectedTagIDs.isEmpty ? .gray : .appGreenDark)
+                    }
+                    .padding()
+                    
+                    Divider()
+                    
+                    TagPickerSheet(selectedTagIDs: $bulkSelectedTagIDs)
+                        .environmentObject(tagStore)
+                }
+                .background(Color.appWhite.ignoresSafeArea())
+            }
+            .presentationDetents([.medium, .large])
+            .presentationDragIndicator(.visible)
+        }
+        .alert("Success", isPresented: $showSuccessAlert) {
+            Button("OK") { }
+        } message: {
+            Text(successMessage)
+        }
+        .confirmationDialog(
+            "Delete \(selectedEntries.count) entries?",
+            isPresented: $showDeleteConfirmation,
+            titleVisibility: .visible
+        ) {
+            Button("Delete", role: .destructive) {
+                // Delete selected entries
+                for entry in selectedEntries {
+                    modelContext.delete(entry)
+                }
+                
+                do {
+                    try modelContext.save()
+                } catch {
+                    print("Error deleting entries: \(error)")
+                }
+                
+                selectedEntries.removeAll()
+                isEditing = false
+            }
+            
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This action cannot be undone.")
         }
         .onAppear {
             // Clear any stale filter state when view appears

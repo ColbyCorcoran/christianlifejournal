@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B6032C512E5F479300448632 /* BinderManagementSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6032C502E5F479300448632 /* BinderManagementSettingsView.swift */; };
 		B60C524E2E05BC0D00800EB8 /* DateUtils.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C524D2E05BC0D00800EB8 /* DateUtils.swift */; };
 		B60C52502E05BC3E00800EB8 /* JournalSection.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C524F2E05BC3E00800EB8 /* JournalSection.swift */; };
 		B60C52562E05BC7B00800EB8 /* DashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B60C52552E05BC7B00800EB8 /* DashboardView.swift */; };
@@ -55,6 +56,16 @@
 		B66F15B42E4F7FD000C426E5 /* SermonNotesListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15B02E4F7FD000C426E5 /* SermonNotesListView.swift */; };
 		B66F15B62E4F96F700C426E5 /* OtherListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15B52E4F96F700C426E5 /* OtherListView.swift */; };
 		B66F15B82E4F9B6A00C426E5 /* ScriptureListComponents.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15B72E4F9B6A00C426E5 /* ScriptureListComponents.swift */; };
+		B66F15C62E526E5100C426E5 /* DailyScripture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15C52E526E5100C426E5 /* DailyScripture.swift */; };
+		B66F15C82E526E8900C426E5 /* DailyScriptureCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15C72E526E8900C426E5 /* DailyScriptureCard.swift */; };
+		B66F15CA2E52720600C426E5 /* AnsweredPrayerScriptures.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15C92E52720600C426E5 /* AnsweredPrayerScriptures.swift */; };
+		B66F15D02E52B87D00C426E5 /* Binder.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15CD2E52B87D00C426E5 /* Binder.swift */; };
+		B66F15D12E52B87D00C426E5 /* BinderStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15CE2E52B87D00C426E5 /* BinderStore.swift */; };
+		B66F15D42E52B8A700C426E5 /* CreateBinderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15D32E52B8A700C426E5 /* CreateBinderView.swift */; };
+		B66F15D72E52BA0C00C426E5 /* BinderContentsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15D62E52BA0C00C426E5 /* BinderContentsView.swift */; };
+		B66F15DB2E52BA2B00C426E5 /* BinderDashboardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15DA2E52BA2B00C426E5 /* BinderDashboardView.swift */; };
+		B66F15DD2E54E87300C426E5 /* BinderPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15DC2E54E87300C426E5 /* BinderPickerSheet.swift */; };
+		B66F15DF2E54ED5000C426E5 /* BulkBinderPickerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = B66F15DE2E54ED5000C426E5 /* BulkBinderPickerSheet.swift */; };
 		B67127082E2186EE0097E590 /* SearchView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B67127072E2186EE0097E590 /* SearchView.swift */; };
 		B671270E2E21E4C00097E590 /* BibleBooks.swift in Sources */ = {isa = PBXBuildFile; fileRef = B671270D2E21E4C00097E590 /* BibleBooks.swift */; };
 		B675A6D12E27423200B5906D /* ScripturePassageSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */; };
@@ -82,6 +93,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		B6032C502E5F479300448632 /* BinderManagementSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinderManagementSettingsView.swift; sourceTree = "<group>"; };
 		B60C51FE2E05B6BD00800EB8 /* Christian Life Journal.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Christian Life Journal.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B60C520D2E05B6BE00800EB8 /* Christian Life JournalTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Christian Life JournalTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B60C52172E05B6BE00800EB8 /* Christian Life JournalUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Christian Life JournalUITests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -133,6 +145,16 @@
 		B66F15B02E4F7FD000C426E5 /* SermonNotesListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SermonNotesListView.swift; sourceTree = "<group>"; };
 		B66F15B52E4F96F700C426E5 /* OtherListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OtherListView.swift; sourceTree = "<group>"; };
 		B66F15B72E4F9B6A00C426E5 /* ScriptureListComponents.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScriptureListComponents.swift; sourceTree = "<group>"; };
+		B66F15C52E526E5100C426E5 /* DailyScripture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyScripture.swift; sourceTree = "<group>"; };
+		B66F15C72E526E8900C426E5 /* DailyScriptureCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyScriptureCard.swift; sourceTree = "<group>"; };
+		B66F15C92E52720600C426E5 /* AnsweredPrayerScriptures.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnsweredPrayerScriptures.swift; sourceTree = "<group>"; };
+		B66F15CD2E52B87D00C426E5 /* Binder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Binder.swift; sourceTree = "<group>"; };
+		B66F15CE2E52B87D00C426E5 /* BinderStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinderStore.swift; sourceTree = "<group>"; };
+		B66F15D32E52B8A700C426E5 /* CreateBinderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CreateBinderView.swift; sourceTree = "<group>"; };
+		B66F15D62E52BA0C00C426E5 /* BinderContentsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = BinderContentsView.swift; path = "Views/Binder Views/BinderContentsView.swift"; sourceTree = SOURCE_ROOT; };
+		B66F15DA2E52BA2B00C426E5 /* BinderDashboardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinderDashboardView.swift; sourceTree = "<group>"; };
+		B66F15DC2E54E87300C426E5 /* BinderPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BinderPickerSheet.swift; sourceTree = "<group>"; };
+		B66F15DE2E54ED5000C426E5 /* BulkBinderPickerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BulkBinderPickerSheet.swift; sourceTree = "<group>"; };
 		B67127072E2186EE0097E590 /* SearchView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SearchView.swift; sourceTree = "<group>"; };
 		B671270D2E21E4C00097E590 /* BibleBooks.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BibleBooks.swift; sourceTree = "<group>"; };
 		B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScripturePassageSelector.swift; sourceTree = "<group>"; };
@@ -204,10 +226,12 @@
 				B60C526F2E05FB7500800EB8 /* JournalModels.swift */,
 				B671270D2E21E4C00097E590 /* BibleBooks.swift */,
 				B66F14B12E44F4D700C426E5 /* PreviewProvider.swift */,
+				B66F15CB2E52B50300C426E5 /* Rotating Scripture */,
 				B66F15BD2E4F9CD600C426E5 /* Prayer Elements */,
 				B66F15BC2E4F9CBD00C426E5 /* Scripture Memorization */,
 				B66F15BB2E4F9CB500C426E5 /* Speakers */,
 				B66F15B92E4F9C7D00C426E5 /* Tags */,
+				B66F15CF2E52B87D00C426E5 /* Binder Elements */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -224,6 +248,7 @@
 			children = (
 				B66F15C42E4F9DB900C426E5 /* Dashboard Elements */,
 				B66F15C32E4F9D7F00C426E5 /* Search Views */,
+				B66F15CC2E52B85300C426E5 /* Binder Views */,
 				B66F15BE2E4F9CFC00C426E5 /* Add Entry Views */,
 				B66F15C02E4F9D2800C426E5 /* Picker Sheets */,
 				B66F15C22E4F9D5B00C426E5 /* List Views */,
@@ -302,6 +327,7 @@
 				B66F157D2E4E213700C426E5 /* TagManagementSettingsView.swift */,
 				B66F157C2E4E213700C426E5 /* SpeakerManagementSettingsView.swift */,
 				B66F157B2E4E213700C426E5 /* PrayerCategoryManagementSettingsView.swift */,
+				B6032C502E5F479300448632 /* BinderManagementSettingsView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -309,6 +335,8 @@
 		B66F15C02E4F9D2800C426E5 /* Picker Sheets */ = {
 			isa = PBXGroup;
 			children = (
+				B66F15DE2E54ED5000C426E5 /* BulkBinderPickerSheet.swift */,
+				B66F15DC2E54E87300C426E5 /* BinderPickerSheet.swift */,
 				B675A6D02E27423200B5906D /* ScripturePassageSelector.swift */,
 				B675A6D22E274ED000B5906D /* PassageRow.swift */,
 				B66F15852E4E5EB400C426E5 /* ScripturePickerSheet.swift */,
@@ -362,10 +390,39 @@
 			isa = PBXGroup;
 			children = (
 				B60C52552E05BC7B00800EB8 /* DashboardView.swift */,
+				B66F15C72E526E8900C426E5 /* DailyScriptureCard.swift */,
 				B60C526D2E05E56800800EB8 /* CardSectionView.swift */,
 				B66F15812E4E292400C426E5 /* QuickAddMenuView.swift */,
 			);
 			path = "Dashboard Elements";
+			sourceTree = "<group>";
+		};
+		B66F15CB2E52B50300C426E5 /* Rotating Scripture */ = {
+			isa = PBXGroup;
+			children = (
+				B66F15C52E526E5100C426E5 /* DailyScripture.swift */,
+				B66F15C92E52720600C426E5 /* AnsweredPrayerScriptures.swift */,
+			);
+			path = "Rotating Scripture";
+			sourceTree = "<group>";
+		};
+		B66F15CC2E52B85300C426E5 /* Binder Views */ = {
+			isa = PBXGroup;
+			children = (
+				B66F15DA2E52BA2B00C426E5 /* BinderDashboardView.swift */,
+				B66F15D62E52BA0C00C426E5 /* BinderContentsView.swift */,
+				B66F15D32E52B8A700C426E5 /* CreateBinderView.swift */,
+			);
+			path = "Binder Views";
+			sourceTree = "<group>";
+		};
+		B66F15CF2E52B87D00C426E5 /* Binder Elements */ = {
+			isa = PBXGroup;
+			children = (
+				B66F15CD2E52B87D00C426E5 /* Binder.swift */,
+				B66F15CE2E52B87D00C426E5 /* BinderStore.swift */,
+			);
+			path = "Binder Elements";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -506,6 +563,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B66F15D42E52B8A700C426E5 /* CreateBinderView.swift in Sources */,
 				B618C0A52E42A4BF00C07EAB /* AddScriptureMemoryView.swift in Sources */,
 				B60C52562E05BC7B00800EB8 /* DashboardView.swift in Sources */,
 				B60C52642E05D0C000800EB8 /* AddPersonalTimeView.swift in Sources */,
@@ -513,7 +571,9 @@
 				B618C0A12E42A1DD00C07EAB /* ScriptureMemoryEntry.swift in Sources */,
 				B66F14AE2E44F37300C426E5 /* Tag.swift in Sources */,
 				B6AE9A332E3A699D00940291 /* TagStore.swift in Sources */,
+				B66F15C62E526E5100C426E5 /* DailyScripture.swift in Sources */,
 				B60C526A2E05DFD700800EB8 /* JournalEntryDetailView.swift in Sources */,
+				B6032C512E5F479300448632 /* BinderManagementSettingsView.swift in Sources */,
 				B671270E2E21E4C00097E590 /* BibleBooks.swift in Sources */,
 				B60C52502E05BC3E00800EB8 /* JournalSection.swift in Sources */,
 				B66F14B02E44F38E00C426E5 /* Speaker.swift in Sources */,
@@ -525,6 +585,7 @@
 				B66F157E2E4E213700C426E5 /* SpeakerManagementSettingsView.swift in Sources */,
 				B66F158C2E4E649C00C426E5 /* PrayerCategoryPickerSheet.swift in Sources */,
 				B66F157F2E4E213700C426E5 /* TagManagementSettingsView.swift in Sources */,
+				B66F15DB2E52BA2B00C426E5 /* BinderDashboardView.swift in Sources */,
 				B66F15802E4E213700C426E5 /* PrayerCategoryManagementSettingsView.swift in Sources */,
 				B66F14B22E44F4D700C426E5 /* PreviewProvider.swift in Sources */,
 				B66F15882E4E5EB400C426E5 /* SpeakerPickerSheet.swift in Sources */,
@@ -540,6 +601,7 @@
 				B675A6D12E27423200B5906D /* ScripturePassageSelector.swift in Sources */,
 				B6693C542E0607B1002FD994 /* Color+AppColors.swift in Sources */,
 				B63C69A32E4392970090DF40 /* ScriptureFlashcardView.swift in Sources */,
+				B66F15CA2E52720600C426E5 /* AnsweredPrayerScriptures.swift in Sources */,
 				B6E0622A2E283CF300BF32DE /* Utilities.swift in Sources */,
 				B60C52702E05FB7500800EB8 /* JournalModels.swift in Sources */,
 				B66F14B72E4A648F00C426E5 /* PrayerRequest.swift in Sources */,
@@ -550,14 +612,20 @@
 				B618C0A32E42A1F400C07EAB /* MemorizationModels.swift in Sources */,
 				B66F14C42E4A64CC00C426E5 /* PrayerRequestDetailView.swift in Sources */,
 				B66F15822E4E292400C426E5 /* QuickAddMenuView.swift in Sources */,
+				B66F15DF2E54ED5000C426E5 /* BulkBinderPickerSheet.swift in Sources */,
 				B66F14C52E4A64CC00C426E5 /* PrayerDashboardView.swift in Sources */,
 				B66F14C62E4A64CC00C426E5 /* AnswerPrayerModal.swift in Sources */,
 				B66F14C72E4A64CC00C426E5 /* PrayerAnsweredCelebrationView.swift in Sources */,
 				B66F14C92E4A64CC00C426E5 /* PrayerRequestListView.swift in Sources */,
 				B66F15B62E4F96F700C426E5 /* OtherListView.swift in Sources */,
+				B66F15DD2E54E87300C426E5 /* BinderPickerSheet.swift in Sources */,
+				B66F15C82E526E8900C426E5 /* DailyScriptureCard.swift in Sources */,
 				B66F15A92E4F7B9800C426E5 /* PersonalTimeListView.swift in Sources */,
 				B66F15AA2E4F7B9800C426E5 /* SearchableListLayout.swift in Sources */,
+				B66F15D72E52BA0C00C426E5 /* BinderContentsView.swift in Sources */,
 				B66F15AB2E4F7B9800C426E5 /* FilterChipSection.swift in Sources */,
+				B66F15D02E52B87D00C426E5 /* Binder.swift in Sources */,
+				B66F15D12E52B87D00C426E5 /* BinderStore.swift in Sources */,
 				B66F15AC2E4F7B9800C426E5 /* ContextualSearchBar.swift in Sources */,
 				B66F14CA2E4A64CC00C426E5 /* AddPrayerRequestView.swift in Sources */,
 				B66F14AA2E43D58800C426E5 /* MemorizationEngine.swift in Sources */,

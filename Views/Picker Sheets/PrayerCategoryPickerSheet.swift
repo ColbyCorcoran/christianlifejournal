@@ -15,6 +15,7 @@ struct PrayerCategoryPickerSheet: View {
     @State private var searchText = ""
     @State private var newCategoryName = ""
     @State private var showingAddCategory = false
+    @State private var temporarySelectedCategoryIDs: Set<UUID> = []
     
     private var filteredCategories: [PrayerCategory] {
         let allCategories = prayerCategoryStore.categories
@@ -28,11 +29,20 @@ struct PrayerCategoryPickerSheet: View {
     }
     
     private func toggleCategory(_ category: PrayerCategory) {
-        if selectedCategoryIDs.contains(category.id) {
-            selectedCategoryIDs.remove(category.id)
+        if temporarySelectedCategoryIDs.contains(category.id) {
+            temporarySelectedCategoryIDs.remove(category.id)
         } else {
-            selectedCategoryIDs.insert(category.id)
+            temporarySelectedCategoryIDs.insert(category.id)
         }
+    }
+    
+    private func applySelection() {
+        selectedCategoryIDs = temporarySelectedCategoryIDs
+        dismiss()
+    }
+    
+    private func cancelSelection() {
+        dismiss()
     }
     
     private func addNewCategory() {
@@ -45,7 +55,7 @@ struct PrayerCategoryPickerSheet: View {
             
             // Find the newly added category and select it
             if let newCategory = prayerCategoryStore.categories.first(where: { $0.name.lowercased() == trimmedName.lowercased() }) {
-                selectedCategoryIDs.insert(newCategory.id)
+                temporarySelectedCategoryIDs.insert(newCategory.id)
             }
             
             newCategoryName = ""
@@ -54,7 +64,8 @@ struct PrayerCategoryPickerSheet: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        NavigationStack {
+            VStack(spacing: 0) {
                 // Search section
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Find Categories")
@@ -99,8 +110,8 @@ struct PrayerCategoryPickerSheet: View {
                                 ForEach(filteredCategories, id: \.id) { category in
                                     Button(action: { toggleCategory(category) }) {
                                         HStack {
-                                            Image(systemName: selectedCategoryIDs.contains(category.id) ? "checkmark.circle.fill" : "circle")
-                                                .foregroundColor(selectedCategoryIDs.contains(category.id) ? .appGreenDark : .gray)
+                                            Image(systemName: temporarySelectedCategoryIDs.contains(category.id) ? "checkmark.circle.fill" : "circle")
+                                                .foregroundColor(temporarySelectedCategoryIDs.contains(category.id) ? .appGreenDark : .gray)
                                                 .font(.title3)
                                             
                                             Text(category.name)
@@ -114,7 +125,7 @@ struct PrayerCategoryPickerSheet: View {
                                         .padding(.vertical, 12)
                                         .background(
                                             RoundedRectangle(cornerRadius: 8)
-                                                .fill(selectedCategoryIDs.contains(category.id) ? Color.appGreenLight.opacity(0.3) : Color.clear)
+                                                .fill(temporarySelectedCategoryIDs.contains(category.id) ? Color.appGreenPale.opacity(0.3) : Color.clear)
                                         )
                                     }
                                     .buttonStyle(PlainButtonStyle())
@@ -206,10 +217,32 @@ struct PrayerCategoryPickerSheet: View {
                 .padding(.bottom, 20)
             }
             .background(Color.appWhite.ignoresSafeArea())
-        .onAppear {
-            // Focus add category if no categories exist
-            if prayerCategoryStore.categories.isEmpty {
-                showingAddCategory = true
+            .navigationTitle("Select Categories")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        cancelSelection()
+                    }
+                    .foregroundColor(.appGreenDark)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Apply") {
+                        applySelection()
+                    }
+                    .foregroundColor(.appGreenDark)
+                    .fontWeight(.semibold)
+                }
+            }
+            .onAppear {
+                // Initialize temporary selection with current selection
+                temporarySelectedCategoryIDs = selectedCategoryIDs
+                
+                // Focus add category if no categories exist
+                if prayerCategoryStore.categories.isEmpty {
+                    showingAddCategory = true
+                }
             }
         }
     }

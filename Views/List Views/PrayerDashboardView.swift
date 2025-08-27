@@ -10,6 +10,7 @@ import SwiftData
 
 struct PrayerDashboardView: View {
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var tagStore: TagStore
     @EnvironmentObject var prayerCategoryStore: PrayerCategoryStore
     @EnvironmentObject var prayerRequestStore: PrayerRequestStore
@@ -99,7 +100,6 @@ struct PrayerDashboardView: View {
                         
                         Spacer(minLength: 120) // Space for bottom search bar
                     }
-                    .padding(.top)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -116,7 +116,7 @@ struct PrayerDashboardView: View {
                             Image(systemName: "magnifyingglass")
                                 .foregroundColor(.gray)
                             
-                            TextField("Search prayer requests and journal entries...", text: $searchText)
+                            TextField("Search requests and entries...", text: $searchText)
                                 .textFieldStyle(.plain)
                             
                             if !searchText.isEmpty {
@@ -154,7 +154,23 @@ struct PrayerDashboardView: View {
                 .background(Color.appWhite)
             }
         }
+        .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
+        .navigationBarBackButtonHidden()
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button(action: {
+                    dismiss()
+                }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 17, weight: .medium))
+                        Text("Back")
+                    }
+                }
+                .foregroundColor(.appGreenDark)
+            }
+        }
         .sheet(isPresented: $showAddPrayerRequest) {
             AddPrayerRequestView()
                 .environmentObject(prayerRequestStore)

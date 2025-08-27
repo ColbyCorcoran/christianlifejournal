@@ -18,12 +18,14 @@ struct AddScriptureMemoryView: View {
     @Environment(\.dismiss) private var dismiss
     @EnvironmentObject var memorizationSettings: MemorizationSettings
     @EnvironmentObject var tagStore: TagStore
+    @EnvironmentObject var binderStore: BinderStore
     
     // Entry to edit (nil for new entries)
     let entryToEdit: ScriptureMemoryEntry?
     
     // MARK: - State Variables
     @State private var selectedMode: AddMemoryMode? = nil
+    @State private var isInitialized: Bool = false
     @State private var individualVerses: [Int: String] = [:]  // New verse-by-verse input
     @State private var showScripturePicker = false
     
@@ -36,6 +38,10 @@ struct AddScriptureMemoryView: View {
     @State private var completedCount: Int = 0
     @State private var hasCompletedToday: Bool = false
     @State private var showPhaseQuestions = false
+    
+    // Binder selection state
+    @State private var showBinderPicker = false
+    @State private var selectedBinderIDs: Set<UUID> = []
     
     // Computed property for bible reference string
     private var bibleReference: String {
@@ -82,17 +88,20 @@ struct AddScriptureMemoryView: View {
     }
     
     // MARK: - Initializer
-    init(entryToEdit: ScriptureMemoryEntry? = nil) {
+    init(entryToEdit: ScriptureMemoryEntry? = nil, preselectedBinderID: UUID? = nil) {
         self.entryToEdit = entryToEdit
-        
-        // Pre-populate fields if editing
+        // Initialize state immediately for edit mode
         if let entry = entryToEdit {
-            // Populate individual verses
-            _individualVerses = State(initialValue: entry.individualVerses)
-            // Parse the bible reference back to a passage selection
             let parsedPassage = parseReferenceToPassage(entry.bibleReference)
             _scripturePassage = State(initialValue: parsedPassage)
             _selectedPassages = State(initialValue: [parsedPassage])
+            _individualVerses = State(initialValue: entry.individualVerses)
+            _isInitialized = State(initialValue: true)
+        }
+        
+        // Initialize binder selection with preselected binder if provided
+        if let preselectedBinderID = preselectedBinderID {
+            _selectedBinderIDs = State(initialValue: Set([preselectedBinderID]))
         }
     }
     
@@ -119,14 +128,25 @@ struct AddScriptureMemoryView: View {
     
     // Helper function to parse string reference back to passage selection
     private func parseReferenceToPassage(_ reference: String) -> ScripturePassageSelection {
-        // Simple parsing - you might want to make this more robust
-        let parts = reference.components(separatedBy: " ")
-        guard parts.count >= 2 else {
+        // More robust parsing that handles multi-word book names
+        
+        // Find the chapter:verse part (contains colon)
+        guard let colonRange = reference.range(of: ":") else {
             return ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
         }
         
-        let bookName = parts[0]
-        let chapterVerse = parts[1]
+        // Split at the last space before the chapter:verse part
+        let beforeColon = String(reference[..<colonRange.lowerBound])
+        let afterColon = String(reference[colonRange.upperBound...])
+        
+        // Find the last space to separate book name from chapter
+        guard let lastSpaceRange = beforeColon.range(of: " ", options: .backwards) else {
+            return ScripturePassageSelection(bookIndex: -1, chapter: 1, verse: 1, verseEnd: 1)
+        }
+        
+        let bookName = String(beforeColon[..<lastSpaceRange.lowerBound])
+        let chapterString = String(beforeColon[lastSpaceRange.upperBound...])
+        let chapterVerse = chapterString + ":" + afterColon
         
         // Find book index
         guard let bookIndex = bibleBooks.firstIndex(where: { $0.name == bookName }) else {
@@ -197,8 +217,14 @@ struct AddScriptureMemoryView: View {
             }
         }
         .sheet(isPresented: $showScripturePicker) {
-            ScripturePickerSheet(selectedPassages: $selectedPassages)
+            ScripturePickerSheet(selectedPassages: $selectedPassages, allowMultiple: false)
                 .presentationDetents([.large, .medium])
+                .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showBinderPicker) {
+            BinderPickerSheet(selectedBinderIDs: $selectedBinderIDs)
+                .environmentObject(binderStore)
+                .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
         }
         .tint(.appGreenDark)
@@ -256,13 +282,16 @@ struct AddScriptureMemoryView: View {
     }
     
     private var editEntryView: some View {
-        VStack {
+        VStack(spacing: 20) {
             Text("Edit your Scripture memory entry")
                 .font(.subheadline)
                 .foregroundColor(.secondary)
-                .padding(.bottom, 20)
             
             entryFormView
+        }
+        .padding()
+        .onAppear {
+            initializeEditState()
         }
     }
     
@@ -413,6 +442,9 @@ struct AddScriptureMemoryView: View {
                     phaseQuestionsView
                 }
                 
+                // Binder Selection
+                binderSection
+                
                 Spacer(minLength: 100)
             }
             .padding(.horizontal, 20)
@@ -505,6 +537,39 @@ struct AddScriptureMemoryView: View {
         }
     }
     
+    // MARK: - Binder Section
+    
+    private var binderSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Binders")
+                .font(.headline)
+                .foregroundColor(.appGreenDark)
+            
+            Button(action: { showBinderPicker = true }) {
+                HStack {
+                    Text(selectedBinderIDs.isEmpty ? "Add Passage to Binder" : "\(selectedBinderIDs.count) selected")
+                        .font(.body)
+                        .foregroundColor(selectedBinderIDs.isEmpty ? .gray : .appGreenDark)
+                    
+                    Spacer()
+                    
+                    Image(systemName: selectedBinderIDs.isEmpty ? "books.vertical" : "books.vertical.fill")
+                        .foregroundColor(.appGreenDark)
+                }
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.appGreenDark, lineWidth: 1)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selectedBinderIDs.isEmpty ? Color.clear : Color.appGreenPale.opacity(0.3))
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+    
     // MARK: - Enhanced Save Entry with Context Diagnostics
 
     private func saveEntry() {
@@ -525,6 +590,9 @@ struct AddScriptureMemoryView: View {
                 .map { "\($0.key) \($0.value)" }
                 .joined(separator: " ")
             updateAutoTags(for: existingEntry)
+            
+            // Update binder associations
+            binderStore.updateBinderAssociations(for: existingEntry, selectedBinderIDs: selectedBinderIDs)
             
             do {
                 try modelContext.save()
@@ -571,6 +639,11 @@ struct AddScriptureMemoryView: View {
             
             // Insert into context
             modelContext.insert(newEntry)
+            
+            // Add to selected binders
+            for binderID in selectedBinderIDs {
+                binderStore.addScriptureMemoryEntry(newEntry, to: binderID)
+            }
             print("✅ Inserted entry into model context")
             
             // Immediately query to see if it's visible
@@ -617,6 +690,22 @@ struct AddScriptureMemoryView: View {
         // Simple extraction - gets text before first space or digit
         let components = reference.components(separatedBy: CharacterSet.decimalDigits).first?.trimmingCharacters(in: .whitespaces) ?? ""
         return components.trimmingCharacters(in: CharacterSet(charactersIn: " :"))
+    }
+    
+    private func initializeEditState() {
+        guard let entry = entryToEdit else { return }
+        
+        // Parse and set scripture passage
+        let parsedPassage = parseReferenceToPassage(entry.bibleReference)
+        scripturePassage = parsedPassage
+        selectedPassages = [parsedPassage]
+        individualVerses = entry.individualVerses
+        
+        // Initialize binder selection for editing
+        let entryBinders = binderStore.bindersContaining(scriptureEntryID: entry.id)
+        selectedBinderIDs = Set(entryBinders.map { $0.id })
+        
+        isInitialized = true
     }
 }
 

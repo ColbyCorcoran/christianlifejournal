@@ -15,6 +15,7 @@ struct SpeakerPickerSheet: View {
     @State private var searchText = ""
     @State private var newSpeakerName = ""
     @State private var showingAddSpeaker = false
+    @State private var temporarySelectedSpeaker: String = ""
     
     private var filteredSpeakers: [Speaker] {
         if searchText.isEmpty {
@@ -27,7 +28,15 @@ struct SpeakerPickerSheet: View {
     }
     
     private func selectSpeaker(_ speaker: Speaker) {
-        selectedSpeaker = speaker.name
+        temporarySelectedSpeaker = speaker.name
+    }
+    
+    private func applySelection() {
+        selectedSpeaker = temporarySelectedSpeaker
+        dismiss()
+    }
+    
+    private func cancelSelection() {
         dismiss()
     }
     
@@ -38,13 +47,13 @@ struct SpeakerPickerSheet: View {
         // Check if speaker already exists
         if !speakerStore.speakers.contains(where: { $0.name.lowercased() == trimmedName.lowercased() }) {
             speakerStore.addSpeaker(trimmedName)
-            selectedSpeaker = trimmedName
-            dismiss()
+            temporarySelectedSpeaker = trimmedName
         }
     }
 
     var body: some View {
-        VStack(spacing: 0) {
+        NavigationStack {
+            VStack(spacing: 0) {
                 // Search section
                 VStack(alignment: .leading, spacing: 12) {
                     Text("Find Speaker")
@@ -89,8 +98,8 @@ struct SpeakerPickerSheet: View {
                                 ForEach(filteredSpeakers, id: \.id) { speaker in
                                     Button(action: { selectSpeaker(speaker) }) {
                                         HStack {
-                                            Image(systemName: selectedSpeaker == speaker.name ? "checkmark.circle.fill" : "circle")
-                                                .foregroundColor(selectedSpeaker == speaker.name ? .appGreenDark : .gray)
+                                            Image(systemName: temporarySelectedSpeaker == speaker.name ? "checkmark.circle.fill" : "circle")
+                                                .foregroundColor(temporarySelectedSpeaker == speaker.name ? .appGreenDark : .gray)
                                                 .font(.title3)
                                             
                                             Text(speaker.name)
@@ -104,7 +113,7 @@ struct SpeakerPickerSheet: View {
                                         .padding(.vertical, 12)
                                         .background(
                                             RoundedRectangle(cornerRadius: 8)
-                                                .fill(selectedSpeaker == speaker.name ? Color.appGreenPale.opacity(0.3) : Color.clear)
+                                                .fill(temporarySelectedSpeaker == speaker.name ? Color.appGreenPale.opacity(0.3) : Color.clear)
                                         )
                                     }
                                     .buttonStyle(PlainButtonStyle())
@@ -178,10 +187,32 @@ struct SpeakerPickerSheet: View {
                 .padding(.bottom, 20)
             }
             .background(Color.appWhite.ignoresSafeArea())
-        .onAppear {
-            // Focus search if no speakers exist
-            if speakerStore.speakers.isEmpty {
-                showingAddSpeaker = true
+            .navigationTitle("Select Speaker")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") {
+                        cancelSelection()
+                    }
+                    .foregroundColor(.appGreenDark)
+                }
+                
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Apply") {
+                        applySelection()
+                    }
+                    .foregroundColor(.appGreenDark)
+                    .fontWeight(.semibold)
+                }
+            }
+            .onAppear {
+                // Initialize temporary selection with current selection
+                temporarySelectedSpeaker = selectedSpeaker
+                
+                // Focus search if no speakers exist
+                if speakerStore.speakers.isEmpty {
+                    showingAddSpeaker = true
+                }
             }
         }
     }

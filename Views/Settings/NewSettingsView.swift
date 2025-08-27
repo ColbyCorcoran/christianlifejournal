@@ -19,6 +19,7 @@ struct NewSettingsView: View {
     @EnvironmentObject var tagStore: TagStore
     @EnvironmentObject var speakerStore: SpeakerStore
     @EnvironmentObject var prayerCategoryStore: PrayerCategoryStore
+    @EnvironmentObject var binderStore: BinderStore
     @EnvironmentObject var memorizationSettings: MemorizationSettings
     
     let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
@@ -117,6 +118,10 @@ struct NewSettingsView: View {
             
             NavigationLink(destination: PrayerCategoryManagementSettingsView()) {
                 Label("Manage Prayer Categories", systemImage: "folder")
+            }
+            
+            NavigationLink(destination: BinderManagementSettingsView()) {
+                Label("Manage Binders", systemImage: "books.vertical")
             }
         }
     }

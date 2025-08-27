@@ -11,7 +11,8 @@ struct AddEntryView: View {
     
     @EnvironmentObject var tagStore: TagStore
     @EnvironmentObject var speakerStore: SpeakerStore
-
+    @EnvironmentObject var binderStore: BinderStore
+    
     @State private var title: String = ""
     @FocusState private var isTitleFocused: Bool
     @State private var notes: String = ""
@@ -23,26 +24,29 @@ struct AddEntryView: View {
     @State private var selectedPassages: [ScripturePassageSelection] = []
     @State private var showSpeakerPicker = false
     @State private var selectedSpeaker: String = ""
-
+    @State private var showBinderPicker = false
+    @State private var selectedBinderIDs: Set<UUID> = []
+    
     private var currentSection: JournalSection {
         if let entryToEdit = entryToEdit {
             return JournalSection(rawValue: entryToEdit.section) ?? .other
         }
         return section
     }
-
+    
     private var navigationTitle: String {
         entryToEdit == nil ? "Add \(currentSection.navigationTitle) Entry" : "Edit \(currentSection.navigationTitle) Entry"
     }
-
+    
     // FIXED: Remove tagStore parameter since we're using @EnvironmentObject
-    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .other) {
+    init(entryToEdit: JournalEntry? = nil, section: JournalSection = .other, preselectedBinderID: UUID? = nil) {
         self.entryToEdit = entryToEdit
         self.section = section
         _notes = State(initialValue: entryToEdit?.notes ?? "")
         _title = State(initialValue: entryToEdit?.title ?? "")
         _selectedTagIDs = State(initialValue: Set(entryToEdit?.tagIDs ?? []))
         _selectedSpeaker = State(initialValue: entryToEdit?.speaker ?? "")
+        _selectedBinderIDs = State(initialValue: preselectedBinderID != nil ? Set([preselectedBinderID!]) : Set())
         self.date = entryToEdit?.date ?? Date()
         
         // Parse scripture passages if they exist
@@ -74,7 +78,7 @@ struct AddEntryView: View {
         let bookIndex = bibleBooks.firstIndex(where: { $0.name == book }) ?? -1
         return ScripturePassageSelection(bookIndex: bookIndex, chapter: chapter, verse: verse, verseEnd: verseEnd)
     }
-
+    
     var body: some View {
         NavigationView {
             ZStack {
@@ -117,6 +121,18 @@ struct AddEntryView: View {
                                     )
                                     .focused($isTitleFocused)
                                 
+                                // Binder and Speaker section (conditional layout)
+                                if currentSection == .sermonNotes || currentSection == .groupNotes {
+                                    // For sermon notes and group notes: HStack with binders + speaker
+                                    HStack {
+                                        binderSection
+                                        speakerSection
+                                    }
+                                } else {
+                                    // For other entry types: full-width binders section
+                                    binderSection
+                                }
+                        
                                 HStack {
                                     // Scripture Passages Card
                                     VStack(alignment: .leading, spacing: 8) {
@@ -127,16 +143,13 @@ struct AddEntryView: View {
                                         
                                         Button(action: { showScripturePicker = true }) {
                                             HStack {
-                                                if selectedPassages.isEmpty {
-                                                    Text("Select Verses")
-                                                        .foregroundColor(.gray)
-                                                } else {
-                                                    Text("\(selectedPassages.count) selected")
-                                                        .foregroundColor(.appGreenDark)
-                                                        .fontWeight(.medium)
-                                                }
+                                                Text(selectedPassages.isEmpty ? "Select Verses" : "\(selectedPassages.count) selected")
+                                                    .font(.body)
+                                                    .foregroundColor(selectedPassages.isEmpty ? .gray : .appGreenDark)
+                                                
                                                 Spacer()
-                                                Image(systemName: "book")
+                                                
+                                                Image(systemName: selectedPassages.isEmpty ? "book" : "book.fill")
                                                     .foregroundColor(.appGreenDark)
                                             }
                                             .padding(8)
@@ -149,43 +162,7 @@ struct AddEntryView: View {
                                                     )
                                             )
                                         }
-                                        .buttonStyle(PlainButtonStyle())
-                                    }
-                                    
-                                    // Speaker Card (for sermon notes and group notes)
-                                    if currentSection == .sermonNotes || currentSection == .groupNotes {
-                                        VStack(alignment: .leading, spacing: 8) {
-                                            Text("Speaker")
-                                                .font(.subheadline)
-                                                .fontWeight(.medium)
-                                                .foregroundColor(.appGreenDark)
-                                            
-                                            Button(action: { showSpeakerPicker = true }) {
-                                                HStack {
-                                                    if selectedSpeaker.isEmpty {
-                                                        Text("Select Speaker")
-                                                            .foregroundColor(.gray)
-                                                    } else {
-                                                        Text(selectedSpeaker)
-                                                            .foregroundColor(.appGreenDark)
-                                                            .fontWeight(.medium)
-                                                    }
-                                                    Spacer()
-                                                    Image(systemName: "person")
-                                                        .foregroundColor(.appGreenDark)
-                                                }
-                                                .padding(8)
-                                                .background(
-                                                    RoundedRectangle(cornerRadius: 8)
-                                                        .stroke(Color.appGreenDark, lineWidth: 1)
-                                                        .background(
-                                                            RoundedRectangle(cornerRadius: 8)
-                                                                .fill(selectedSpeaker.isEmpty ? Color.clear : Color.appGreenPale.opacity(0.3))
-                                                        )
-                                                )
-                                            }
-                                            .buttonStyle(PlainButtonStyle())
-                                        }
+                                        .buttonStyle(.plain)
                                     }
                                     
                                     // Tags Card
@@ -252,8 +229,8 @@ struct AddEntryView: View {
                         let passagesString = selectedPassages.compactMap { passage in
                             return passage.displayString(bibleBooks: bibleBooks)
                         }
-                        .filter { !$0.isEmpty }
-                        .joined(separator: "; ")
+                            .filter { !$0.isEmpty }
+                            .joined(separator: "; ")
                         
                         if let entryToEdit = entryToEdit {
                             // Editing existing entry
@@ -263,6 +240,9 @@ struct AddEntryView: View {
                             entryToEdit.tagIDs = Array(selectedTagIDs)
                             entryToEdit.speaker = selectedSpeaker.isEmpty ? nil : selectedSpeaker
                             try? modelContext.save()
+                            
+                            // Update binder associations
+                            binderStore.updateBinderAssociations(for: entryToEdit, selectedBinderIDs: selectedBinderIDs)
                         } else {
                             // Creating new entry
                             let newEntry = JournalEntry(
@@ -275,6 +255,11 @@ struct AddEntryView: View {
                             )
                             newEntry.tagIDs = Array(selectedTagIDs)
                             modelContext.insert(newEntry)
+                            
+                            // Add to selected binders
+                            for binderID in selectedBinderIDs {
+                                binderStore.addEntry(newEntry, to: binderID)
+                            }
                         }
                         
                         // Auto-add speaker to SpeakerStore if it doesn't exist and entry supports speakers
@@ -315,31 +300,38 @@ struct AddEntryView: View {
                     .presentationDetents([.medium, .large])
                     .presentationDragIndicator(.visible)
             }
+            .sheet(isPresented: $showBinderPicker) {
+                BinderPickerSheet(selectedBinderIDs: $selectedBinderIDs)
+                    .environmentObject(binderStore)
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+            }
             .tint(Color.appGreenDark)
             .onAppear {
                 if entryToEdit == nil {
                     isTitleFocused = true
+                } else if let entry = entryToEdit {
+                    // Initialize binder selection for editing
+                    let entryBinders = binderStore.bindersContaining(journalEntryID: entry.id)
+                    selectedBinderIDs = Set(entryBinders.map { $0.id })
                 }
             }
         }
         .tint(Color.appGreenDark)
     }
-
+    
     
     private var tagsSection: some View {
         Button(action: { showTagPicker = true }) {
             HStack {
-                if selectedTagIDs.isEmpty {
-                    Text("Select Tags")
-                        .foregroundColor(.gray)
-                } else {
-                    Text("\(selectedTagIDs.count) selected")
-                        .foregroundColor(.appGreenDark)
-                        .fontWeight(.medium)
-                }
+                Text(selectedTagIDs.isEmpty ? "Select Tags" : "\(selectedTagIDs.count) selected")
+                    .font(.body)
+                    .foregroundColor(selectedTagIDs.isEmpty ? .gray : .appGreenDark)
+                
                 Spacer()
-                Image(systemName: "tag")
-                    .foregroundColor(.appGreenDark)
+                
+                Image(systemName: selectedTagIDs.isEmpty ? "tag" : "tag.fill")
+                    .foregroundColor(selectedTagIDs.isEmpty ? .gray : .appGreenDark)
             }
             .padding(8)
             .background(
@@ -351,17 +343,81 @@ struct AddEntryView: View {
                     )
             )
         }
-        .buttonStyle(PlainButtonStyle())
+        .buttonStyle(.plain)
     }
     
+    private var binderSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Binders")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.appGreenDark)
+            
+            Button(action: { showBinderPicker = true }) {
+                HStack {
+                    Text(selectedBinderIDs.isEmpty ? "Select Binders" : "\(selectedBinderIDs.count) selected")
+                        .font(.body)
+                        .foregroundColor(selectedBinderIDs.isEmpty ? .gray : .appGreenDark)
+                    
+                    Spacer()
+                    
+                    Image(systemName: selectedBinderIDs.isEmpty ? "books.vertical" : "books.vertical.fill")
+                        .foregroundColor(.appGreenDark)
+                }
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.appGreenDark, lineWidth: 1)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selectedBinderIDs.isEmpty ? Color.clear : Color.appGreenPale.opacity(0.3))
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
+    
+    private var speakerSection: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Speaker")
+                .font(.subheadline)
+                .fontWeight(.medium)
+                .foregroundColor(.appGreenDark)
+            
+            Button(action: { showSpeakerPicker = true }) {
+                HStack {
+                    Text(selectedSpeaker.isEmpty ? "Select Speaker" : selectedSpeaker)
+                            .foregroundColor(selectedSpeaker.isEmpty ? .gray : .appGreenDark)
+                    
+                    Spacer()
+                    
+                    Image(systemName: selectedSpeaker.isEmpty ? "person" : "person.fill")
+                        .foregroundColor(.appGreenDark)
+                }
+                .padding(8)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .stroke(Color.appGreenDark, lineWidth: 1)
+                        .background(
+                            RoundedRectangle(cornerRadius: 8)
+                                .fill(selectedSpeaker.isEmpty ? Color.clear : Color.appGreenPale.opacity(0.3))
+                        )
+                )
+            }
+            .buttonStyle(.plain)
+        }
+    }
     
     private var notesSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        ZStack(alignment: .topLeading) {
             if notes.isEmpty {
                 Text("Record your thoughts, reflections, and insights...")
                     .foregroundColor(.gray)
                     .italic()
                     .padding(.bottom, 4)
+                    .padding(.top, 8)
+                    .padding(.leading, 5)
             }
             
             TextEditor(text: $notes)
@@ -375,10 +431,10 @@ struct AddEntryView: View {
                                 .fill(Color.appGreenPale.opacity(0.1))
                         )
                 )
-                .frame(minHeight: 300)
+                .frame(minHeight: 375)
         }
     }
-
+    
     private var hasUnsavedChanges: Bool {
         let originalTitle = entryToEdit?.title ?? ""
         let originalNotes = entryToEdit?.notes ?? ""
@@ -390,14 +446,14 @@ struct AddEntryView: View {
         let currentPassagesString = selectedPassages.compactMap { passage in
             return passage.displayString(bibleBooks: bibleBooks)
         }
-        .filter { !$0.isEmpty }
-        .joined(separator: "; ")
+            .filter { !$0.isEmpty }
+            .joined(separator: "; ")
         
         return title != originalTitle ||
-               notes != originalNotes ||
-               selectedTagIDs != originalTagIDs ||
-               selectedSpeaker != originalSpeaker ||
-               currentPassagesString != originalPassagesString
+        notes != originalNotes ||
+        selectedTagIDs != originalTagIDs ||
+        selectedSpeaker != originalSpeaker ||
+        currentPassagesString != originalPassagesString
     }
     
     // Helper function for date formatting
