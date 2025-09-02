@@ -7,18 +7,19 @@
 
 import SwiftUI
 import SwiftData
+import CloudKit
 
 @Model
 class PrayerRequest {
-    var id: UUID
-    var title: String
-    var requestDescription: String
-    var dateAdded: Date
-    var isAnswered: Bool
+    var id: UUID = UUID()
+    var title: String = ""
+    var requestDescription: String = ""
+    var dateAdded: Date = Date()
+    var isAnswered: Bool = false
     var dateAnswered: Date?
     var answerNotes: String?
-    var tagIDs: [UUID]
-    var categoryIDs: [UUID]
+    var tagIDs: [UUID] = []
+    var categoryIDs: [UUID] = []
     var scripture: String? // Added scripture passages support
     
     init(title: String = "", requestDescription: String = "", dateAdded: Date = Date(), isAnswered: Bool = false, dateAnswered: Date? = nil, answerNotes: String? = nil, tagIDs: [UUID] = [], categoryIDs: [UUID] = [], scripture: String? = nil) {

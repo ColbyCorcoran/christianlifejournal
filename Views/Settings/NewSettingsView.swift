@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import CloudKit
 
 // Minimal enum for legacy management views
 enum SettingsPage {
@@ -20,7 +21,14 @@ struct NewSettingsView: View {
     @EnvironmentObject var speakerStore: SpeakerStore
     @EnvironmentObject var prayerCategoryStore: PrayerCategoryStore
     @EnvironmentObject var binderStore: BinderStore
-    @EnvironmentObject var memorizationSettings: MemorizationSettings
+// Using cloudSettings directly instead of separate memorizationSettings
+// Using cloudSettings directly for auto-fill
+    @ObservedObject private var cloudSettings = CloudKitSettingsService.shared
+    
+    // CloudKit state variables
+    @State private var cloudKitStatus: CKAccountStatus = .couldNotDetermine
+    @State private var showCloudKitAlert = false
+    @StateObject private var migrationService = CloudKitMigrationService.shared
     
     let appVersion = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
     
@@ -45,6 +53,22 @@ struct NewSettingsView: View {
                 }
             })
         }
+        .onAppear {
+            checkCloudKitStatus()
+        }
+        .alert("iCloud Not Available", isPresented: $showCloudKitAlert) {
+            Button("Settings") {
+                if let settingsURL = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(settingsURL)
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Please sign in to iCloud in Settings to enable syncing.")
+        }
+        .background(
+            CloudKitMigrationView()
+        )
     }
     
     // MARK: - View Components
@@ -57,11 +81,11 @@ struct NewSettingsView: View {
                 VStack(spacing: 8) {
                     Image(systemName: "leaf.fill")
                         .resizable()
-                        .frame(width: 24, height: 24)
+                        .frame(width: 32, height: 32)
                         .foregroundColor(.appGreenDark)
                     
                     Text("Christian Life Journal")
-                        .font(.headline)
+                        .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundColor(.appGreenDark)
                     
@@ -71,7 +95,7 @@ struct NewSettingsView: View {
                 }
                 Spacer()
             }
-            .padding(.vertical, 8)
+            .padding(.vertical, 4)
         }
         .listRowBackground(Color.appGreenPale.opacity(0.1))
     }
@@ -79,13 +103,16 @@ struct NewSettingsView: View {
     @ViewBuilder
     private var scriptureMemorizationSection: some View {
         Section("Scripture Memorization") {
-            Toggle(isOn: $memorizationSettings.isSystemEnabled) {
-                Label("Enable Memory System", systemImage: memorizationSettings.isSystemEnabled ? "book.closed.fill" : "book.closed")
+            Toggle(isOn: $cloudSettings.memorizationSystemEnabled) {
+                Label("Enable Memory System", systemImage: cloudSettings.memorizationSystemEnabled ? "book.closed.fill" : "book.closed")
             }
             .tint(.appGreenDark)
+            .onChange(of: cloudSettings.memorizationSystemEnabled) { oldValue, newValue in
+                AnalyticsService.shared.trackMemorizationSystemToggled(enabled: newValue)
+            }
             
             VStack(alignment: .leading, spacing: 8) {
-                if memorizationSettings.isSystemEnabled {
+                if cloudSettings.memorizationSystemEnabled {
                     Text("Active: 3-phase system with progress tracking")
                         .font(.caption)
                         .foregroundColor(.appGreenDark)
@@ -131,34 +158,126 @@ struct NewSettingsView: View {
     @ViewBuilder
     private var userExperienceSection: some View {
         Section(content: {
-            HStack {
-                Label("FaceID Authentication", systemImage: "faceid")
+            // Enhanced iCloud Sync (replacing the disabled placeholder)
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Label("iCloud Sync", systemImage: cloudSettings.cloudKitEnabled ? "arrow.trianglehead.2.clockwise.rotate.90.icloud.fill" : "arrow.trianglehead.2.clockwise.rotate.90.icloud")
+                    Spacer()
+                    Toggle("", isOn: $cloudSettings.cloudKitEnabled)
+                        .tint(.appGreenDark)
+                        .disabled(cloudKitStatus != .available)
+                }
+                .onChange(of: cloudSettings.cloudKitEnabled) { oldValue, newValue in
+                    handleCloudKitToggle(oldValue: oldValue, newValue: newValue)
+                    // Haptic feedback for important setting change
+                    HapticFeedbackService.shared.importantSettingChanged()
+                }
+                
+                // Status text
+                Group {
+                    if cloudKitStatus == .available {
+                        if cloudSettings.cloudKitEnabled {
+                            Text("✅ Your journal data will sync across all your devices")
+                                .foregroundColor(.appGreenDark)
+                        } else {
+                            Text("📱 Data is stored locally on this device only")
+                                .foregroundColor(.secondary)
+                        }
+                    } else {
+                        Text("⚠️ iCloud is not available. Check your iCloud settings.")
+                            .foregroundColor(.orange)
+                    }
+                }
+                .font(.caption2)
+                .fixedSize(horizontal: false, vertical: true)
+                
+                // Migration status indicator
+                if migrationService.migrationStatus.isInProgress {
+                    MigrationStatusView()
+                }
+                
+                // Detailed sync status when CloudKit is enabled
+                if cloudSettings.cloudKitEnabled && cloudKitStatus == .available {
+                    Divider()
+                    
+                    DetailedSyncStatus()
+                    
+                    // Development: Test sync button
+                    #if DEBUG
+                    Button("Test Sync") {
+                        CloudKitSyncService.shared.simulateSync()
+                    }
+                    .font(.caption)
+                    .foregroundColor(.appGreenDark)
+                    .padding(.top, 4)
+                    #endif
+                }
+                
+                Text("iCloud Syncing keeps your journal data up to date across all your devices.")
+                    .font(.caption2)
                     .foregroundColor(.secondary)
-                Spacer()
-                Toggle("", isOn: .constant(false))
-                    .disabled(true)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 2)
             }
             
-            HStack {
-                Label("Haptic Feedback", systemImage: "iphone.radiowaves.left.and.right")
-                    .foregroundColor(.secondary)
-                Spacer()
-                Toggle("", isOn: .constant(false))
-                    .disabled(true)
-            }
+            // Biometric Authentication
+            BiometricAuthToggleView()
             
-            HStack {
-                Label("iCloud Sync", systemImage: "arrow.trianglehead.2.clockwise.rotate.90.icloud")
+            HapticFeedbackToggleView()
+            
+            // Usage Analytics
+            AnalyticsToggleView()
+            
+            // Scripture Auto-Fill Settings
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Label("Scripture Auto-Fill", systemImage: cloudSettings.scriptureAutoFillEnabled ? "quote.bubble.fill" : "quote.bubble")
+                    Spacer()
+                    Toggle("", isOn: $cloudSettings.scriptureAutoFillEnabled)
+                        .tint(.appGreenDark)
+                }
+                
+                if cloudSettings.scriptureAutoFillEnabled {
+                    VStack(alignment: .leading, spacing: 6) {
+                        HStack {
+                            Text("Translation:")
+                                .font(.caption)
+                                .foregroundColor(.secondary)
+                            Spacer()
+                            Menu(cloudSettings.selectedTranslation.abbreviation) {
+                                ForEach(BibleTranslation.allCases, id: \.rawValue) { translation in
+                                    Button(translation.displayName) {
+                                        cloudSettings.selectedTranslation = translation
+                                    }
+                                }
+                            }
+                            .font(.caption)
+                            .foregroundColor(.appGreenDark)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(Color.appGreenPale.opacity(0.2))
+                            .cornerRadius(8)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 8)
+                                    .stroke(Color.appGreenDark.opacity(0.3), lineWidth: 1)
+                            )
+                        }
+                    }
+                    
+                } else {
+                    Text("")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                
+                Text("Automatically expand Scripture references in your journal entries to include the full verse text.")
+                    .font(.caption2)
                     .foregroundColor(.secondary)
-                Spacer()
-                Toggle("", isOn: .constant(false))
-                    .disabled(true)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, 2)
             }
         }, header: {
             Text("User Experience")
-        }, footer: {
-            Text("Coming soon - personalization options")
-                .font(.caption2)
         })
     }
     
@@ -190,6 +309,45 @@ struct NewSettingsView: View {
         })
     }
     
+    // MARK: - CloudKit Methods
+    
+    private func checkCloudKitStatus() {
+        #if canImport(CloudKit)
+        CKContainer(identifier: "iCloud.colbyacorcoran.Christian-Life-Journal")
+            .accountStatus { status, error in
+                DispatchQueue.main.async {
+                    self.cloudKitStatus = status
+                    print("CloudKit status: \(status), error: \(error?.localizedDescription ?? "none")")
+                }
+            }
+        #else
+        // CloudKit not available
+        DispatchQueue.main.async {
+            self.cloudKitStatus = .couldNotDetermine
+            print("CloudKit not available in this build")
+        }
+        #endif
+    }
+    
+    private func handleCloudKitToggle(oldValue: Bool, newValue: Bool) {
+        // Check if CloudKit is available before allowing toggle
+        if newValue && cloudKitStatus != .available {
+            cloudSettings.cloudKitEnabled = false
+            showCloudKitAlert = true
+            return
+        }
+        
+        // Handle the toggle change using migration service
+        if newValue && !oldValue {
+            // Enabling CloudKit
+            migrationService.enableCloudKit()
+            AnalyticsService.shared.trackCloudKitEnabled()
+        } else if !newValue && oldValue {
+            // Disabling CloudKit
+            migrationService.disableCloudKit()
+        }
+    }
+    
 }
 
 // MARK: - Preview
@@ -219,11 +377,11 @@ struct SwiftDataFreePreviewNewSettingsView: View {
                     VStack(spacing: 8) {
                         Image(systemName: "leaf.fill")
                             .resizable()
-                            .frame(width: 24, height: 24)
+                            .frame(width: 32, height: 32)
                             .foregroundColor(.appGreenDark)
                         
                         Text("Christian Life Journal")
-                            .font(.headline)
+                            .font(.title2)
                             .fontWeight(.semibold)
                             .foregroundColor(.appGreenDark)
                         
@@ -233,7 +391,7 @@ struct SwiftDataFreePreviewNewSettingsView: View {
                     }
                     Spacer()
                 }
-                .padding(.vertical, 8)
+                .padding(.vertical, 4)
             }
             .listRowBackground(Color.appGreenPale.opacity(0.1))
             

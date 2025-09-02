@@ -7,15 +7,16 @@
 
 import Foundation
 import SwiftData
+import CloudKit
 import UIKit
 
 @Model
 class ScriptureMemoryEntry: Hashable {
-    @Attribute(.unique) var id: UUID = UUID()
-    var bibleReference: String
-    var passageText: String
-    var dateAdded: Date
-    var isSystemManaged: Bool
+    var id: UUID = UUID()
+    var bibleReference: String = ""
+    var passageText: String = ""
+    var dateAdded: Date = Date()
+    var isSystemManaged: Bool = false
     
     // Store enum as String instead of custom enum (SwiftData compatible)
     var currentPhaseRaw: String = "phase1"

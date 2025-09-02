@@ -116,9 +116,9 @@ struct AddPersonalTimeView: View {
                                     .fontWeight(.medium)
                                     .foregroundColor(.appGreenDark)
                                 
-                                TextField("Enter entry title...", text: $title)
-                                    .textFieldStyle(.plain)
-                                    .padding(8)
+                                VStack(alignment: .leading, spacing: 4) {
+                                    TextField("Enter entry title...", text: $title)
+                                    .focused($isTitleFocused)
                                     .background(
                                         RoundedRectangle(cornerRadius: 8)
                                             .stroke(Color.appGreenDark, lineWidth: 1)
@@ -127,7 +127,7 @@ struct AddPersonalTimeView: View {
                                                     .fill(Color.appGreenPale.opacity(0.1))
                                             )
                                     )
-                                    .focused($isTitleFocused)
+                                }
                                 
                                 // Binder section (full-width for Personal Time)
                                 binderSection
@@ -241,6 +241,12 @@ struct AddPersonalTimeView: View {
                             entryToEdit.tagIDs = Array(selectedTagIDs)
                             try? modelContext.save()
                             
+                            // Haptic feedback for successful save
+                            HapticFeedbackService.shared.journalEntrySaved()
+                            
+                            // Track analytics for edit
+                            AnalyticsService.shared.trackJournalEntryEdited(section: currentSection.rawValue)
+                            
                             // Update binder associations
                             binderStore.updateBinderAssociations(for: entryToEdit, selectedBinderIDs: selectedBinderIDs)
                         } else {
@@ -254,6 +260,12 @@ struct AddPersonalTimeView: View {
                             )
                             newEntry.tagIDs = Array(selectedTagIDs)
                             modelContext.insert(newEntry)
+                            
+                            // Haptic feedback for successful save
+                            HapticFeedbackService.shared.journalEntrySaved()
+                            
+                            // Track analytics for new entry
+                            AnalyticsService.shared.trackJournalEntryCreated(section: currentSection.rawValue)
                             
                             // Add to selected binders
                             for binderID in selectedBinderIDs {
@@ -348,7 +360,7 @@ struct AddPersonalTimeView: View {
                 Spacer()
                 
                 Image(systemName: selectedTagIDs.isEmpty ? "tag" : "tag.fill")
-                    .foregroundColor(selectedTagIDs.isEmpty ? .gray : .appGreenDark)
+                    .foregroundColor(.appGreenDark)
             }
             .padding(8)
             .background(
@@ -365,31 +377,15 @@ struct AddPersonalTimeView: View {
     
 
     private var notesSection: some View {
-        ZStack(alignment: .topLeading) {
-            if notes.isEmpty {
-                Text("Record your thoughts, reflections, and insights...")
-                    .foregroundColor(.gray)
-                    .italic()
-                    .padding(.bottom, 4)
-                    .padding(.top, 8)
-                    .padding(.leading, 5)
+        VStack(alignment: .leading, spacing: 8) {
+            ScriptureAutoFillTextEditor(
+                text: $notes,
+                placeholder: "What passages are you reflecting on today?\n\n\nRecord what the Lord is teaching you..."
+            )
+            .frame(minHeight: 325)
+            .onTapGesture {
+                showScripturePicker = false
             }
-            
-            TextEditor(text: $notes)
-                .font(.body)
-                .scrollContentBackground(.hidden)
-                .background(
-                    RoundedRectangle(cornerRadius: 8)
-                        .stroke(Color.appGreenDark.opacity(0.3), lineWidth: 1)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8)
-                                .fill(Color.appGreenPale.opacity(0.1))
-                        )
-                )
-                .frame(minHeight: 325)
-                .onTapGesture {
-                    showScripturePicker = false
-                }
         }
     }
 

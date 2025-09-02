@@ -595,18 +595,15 @@ struct DashboardView: View {
         case .personalTime:
             AddPersonalTimeView(entryToEdit: nil, section: section)
                 .environmentObject(tagStore)
-                .modelContainer(for: [JournalEntry.self, ScriptureMemoryEntry.self]) // Ensure shared container
         case .sermonNotes:
             AddSermonNotesView(entryToEdit: nil, section: section)
                 .environmentObject(tagStore)
                 .environmentObject(speakerStore)
-                .modelContainer(for: [JournalEntry.self, ScriptureMemoryEntry.self]) // Ensure shared container
         case .scriptureMemorization:
             AddScriptureMemoryView()
                 .environmentObject(tagStore)
                 .environmentObject(memorizationSettings)
                 .environment(\.modelContext, modelContext) // CRITICAL: Pass the same context
-                .modelContainer(for: [JournalEntry.self, ScriptureMemoryEntry.self]) // Ensure shared container
         case .prayerRequest:
             AddPrayerRequestView()
                 .environmentObject(getPrayerRequestStore())

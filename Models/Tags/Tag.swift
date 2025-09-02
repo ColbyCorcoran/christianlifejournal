@@ -15,7 +15,7 @@ enum TagType: String, Codable, CaseIterable {
 
 @Model
 class Tag {
-    @Attribute(.unique) var id: UUID = UUID()
+    var id: UUID = UUID()
     var name: String = ""
     var typeRaw: String = "user" // Store enum as string for SwiftData compatibility
     

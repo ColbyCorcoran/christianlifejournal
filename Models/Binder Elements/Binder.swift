@@ -7,18 +7,19 @@
 
 import SwiftUI
 import SwiftData
+import CloudKit
 
 @Model
 class Binder {
-    var id: UUID
-    var name: String
+    var id: UUID = UUID()
+    var name: String = ""
     var binderDescription: String?
-    var dateCreated: Date
-    var journalEntryIDs: [UUID]
-    var scriptureEntryIDs: [UUID] 
-    var prayerRequestIDs: [UUID]
-    var colorHex: String
-    var isArchived: Bool
+    var dateCreated: Date = Date()
+    var journalEntryIDs: [UUID] = []
+    var scriptureEntryIDs: [UUID] = []
+    var prayerRequestIDs: [UUID] = []
+    var colorHex: String = "#4A7C59"
+    var isArchived: Bool = false
     
     init(name: String, binderDescription: String? = nil, colorHex: String = "#4A7C59") {
         self.id = UUID()

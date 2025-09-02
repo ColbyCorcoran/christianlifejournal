@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct PrayerCategoryManagementSettingsView: View {
-    @EnvironmentObject var prayerCategoryStore: PrayerCategoryStore
+    @Environment(\.modelContext) private var modelContext
+    @Query private var categories: [PrayerCategory]
     @State private var newCategory: String = ""
     @State private var editingCategoryId: UUID? = nil
     @State private var editedCategory: String = ""
@@ -37,8 +39,10 @@ struct PrayerCategoryManagementSettingsView: View {
                     TextField("Category name...", text: $newCategory)
                     Button("Add") {
                         let trimmed = newCategory.trimmingCharacters(in: .whitespaces)
-                        if !trimmed.isEmpty && !prayerCategoryStore.categories.contains(where: { $0.name.caseInsensitiveCompare(trimmed) == .orderedSame }) {
-                            prayerCategoryStore.addCategory(trimmed)
+                        if !trimmed.isEmpty && !categories.contains(where: { $0.name.caseInsensitiveCompare(trimmed) == .orderedSame }) {
+                            let newCategoryModel = PrayerCategory(name: trimmed)
+                            modelContext.insert(newCategoryModel)
+                            try? modelContext.save()
                             newCategory = ""
                         }
                     }
@@ -49,7 +53,7 @@ struct PrayerCategoryManagementSettingsView: View {
             
             // Your Categories Section
             Section("Your Categories") {
-                if prayerCategoryStore.categories.isEmpty {
+                if categories.isEmpty {
                     VStack(spacing: 8) {
                         Image(systemName: "folder")
                             .font(.system(size: 24))
@@ -64,7 +68,7 @@ struct PrayerCategoryManagementSettingsView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 20)
                 } else {
-                    ForEach(prayerCategoryStore.categories, id: \.id) { category in
+                    ForEach(categories, id: \.id) { category in
                         categoryRow(for: category)
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button("Delete", role: .destructive) {
@@ -89,7 +93,10 @@ struct PrayerCategoryManagementSettingsView: View {
         )) {
             Button("Delete", role: .destructive) {
                 if let categoryId = categoryToDelete {
-                    prayerCategoryStore.removeCategory(withId: categoryId)
+                    if let categoryToDelete = categories.first(where: { $0.id == categoryId }) {
+                        modelContext.delete(categoryToDelete)
+                        try? modelContext.save()
+                    }
                 }
                 categoryToDelete = nil
             }
@@ -112,7 +119,8 @@ struct PrayerCategoryManagementSettingsView: View {
                 
                 Button("Save") {
                     if !editedCategory.trimmingCharacters(in: .whitespaces).isEmpty {
-                        prayerCategoryStore.updateCategory(withId: category.id, newName: editedCategory)
+                        category.name = editedCategory
+                        try? modelContext.save()
                     }
                     editingCategoryId = nil
                     editedCategory = ""

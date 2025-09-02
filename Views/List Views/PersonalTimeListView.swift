@@ -161,6 +161,8 @@ struct PersonalTimeListView: View {
                                     } else {
                                         selectedEntries.insert(entry)
                                     }
+                                    // Haptic feedback for selection change
+                                    HapticFeedbackService.shared.bulkSelectionChanged()
                                 }
                             } else {
                                 NavigationLink(value: DashboardNav.entry(entry.id)) {

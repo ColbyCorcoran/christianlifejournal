@@ -424,14 +424,17 @@ struct AddScriptureMemoryView: View {
                                     .fontWeight(.semibold)
                                     .foregroundColor(.appGreenDark)
                                 
-                                TextField("Enter verse \(verseNum) text...", text: bindingFor(verse: verseNum), axis: .vertical)
-                                    .textFieldStyle(.plain)
-                                    .padding(8)
-                                    .background(
-                                        RoundedRectangle(cornerRadius: 8)
-                                            .stroke(Color.appGreenDark, lineWidth: 1)
-                                    )
-                                    .lineLimit(3, reservesSpace: false)
+                                ScriptureAutoFillTextField(
+                                    text: bindingFor(verse: verseNum),
+                                    placeholder: "Enter verse \(verseNum) text... (e.g., John 3:16 for auto-fill)",
+                                    axis: .vertical
+                                )
+                                .padding(8)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 8)
+                                        .stroke(Color.appGreenDark, lineWidth: 1)
+                                )
+                                .lineLimit(3, reservesSpace: false)
                             }
                         }
                     }
@@ -661,6 +664,9 @@ struct AddScriptureMemoryView: View {
             do {
                 try modelContext.save()
                 print("✅ Successfully saved new entry to database")
+                
+                // Track analytics for scripture verse addition
+                AnalyticsService.shared.trackScriptureVerseAdded(systemEnabled: memorizationSettings.isSystemEnabled)
                 
                 // Query again after save
                 let allEntriesAfterSave = try modelContext.fetch(descriptor)

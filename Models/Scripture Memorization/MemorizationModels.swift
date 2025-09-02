@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Combine
 
 // MARK: - Memorization Phase Enum
 
@@ -136,14 +137,11 @@ struct ExistingEntryData {
 // MARK: - System Settings
 
 class MemorizationSettings: ObservableObject {
-    @Published var isSystemEnabled: Bool {
-        didSet {
-            UserDefaults.standard.set(isSystemEnabled, forKey: "MemorizationSystemEnabled")
-        }
-    }
+    // Simple wrapper for backwards compatibility
+    @Published var isSystemEnabled: Bool = true
     
     init() {
-        // Default to ON as requested
-        self.isSystemEnabled = UserDefaults.standard.object(forKey: "MemorizationSystemEnabled") as? Bool ?? true
+        // Initialize from CloudKit settings
+        isSystemEnabled = CloudKitSettingsService.shared.memorizationSystemEnabled
     }
 }

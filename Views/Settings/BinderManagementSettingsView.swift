@@ -6,9 +6,11 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct BinderManagementSettingsView: View {
-    @EnvironmentObject var binderStore: BinderStore
+    @Environment(\.modelContext) private var modelContext
+    @Query private var binders: [Binder]
     @State private var newBinderName: String = ""
     @State private var newBinderDescription: String = ""
     @State private var newBinderColorHex: String = "#4A7C59"
@@ -84,7 +86,7 @@ struct BinderManagementSettingsView: View {
                             let trimmedName = newBinderName.trimmingCharacters(in: .whitespaces)
                             let trimmedDescription = newBinderDescription.trimmingCharacters(in: .whitespaces)
                             
-                            let nameExists = binderStore.binders.contains { binder in
+                            let nameExists = binders.contains { binder in
                                 binder.name.caseInsensitiveCompare(trimmedName) == .orderedSame
                             }
                             
@@ -94,7 +96,8 @@ struct BinderManagementSettingsView: View {
                                     binderDescription: trimmedDescription.isEmpty ? nil : trimmedDescription,
                                     colorHex: newBinderColorHex
                                 )
-                                binderStore.addBinder(newBinder)
+                                modelContext.insert(newBinder)
+                                try? modelContext.save()
                                 newBinderName = ""
                                 newBinderDescription = ""
                                 newBinderColorHex = "#4A7C59"
@@ -108,7 +111,7 @@ struct BinderManagementSettingsView: View {
             
             // Your Binders Section
             Section("Your Binders") {
-                if binderStore.binders.isEmpty {
+                if binders.isEmpty {
                     VStack(spacing: 8) {
                         Image(systemName: "books.vertical")
                             .font(.system(size: 24))
@@ -123,7 +126,7 @@ struct BinderManagementSettingsView: View {
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 20)
                 } else {
-                    ForEach(binderStore.binders, id: \.id) { binder in
+                    ForEach(binders, id: \.id) { binder in
                         binderRow(for: binder)
                             .swipeActions(edge: .trailing, allowsFullSwipe: false) {
                                 Button("Delete", role: .destructive) {
@@ -149,7 +152,10 @@ struct BinderManagementSettingsView: View {
         )) {
             Button("Delete", role: .destructive) {
                 if let binderId = binderToDelete {
-                    binderStore.deleteBinder(withId: binderId)
+                    if let binderToDelete = binders.first(where: { $0.id == binderId }) {
+                        modelContext.delete(binderToDelete)
+                        try? modelContext.save()
+                    }
                 }
                 binderToDelete = nil
             }
@@ -158,9 +164,6 @@ struct BinderManagementSettingsView: View {
             }
         } message: {
             Text("Are you sure you want to delete this binder? All entries will be removed from it, but the entries themselves will not be deleted.")
-        }
-        .onAppear {
-            binderStore.refresh()
         }
     }
     
@@ -192,7 +195,7 @@ struct BinderManagementSettingsView: View {
                         if !trimmedName.isEmpty {
                             binder.name = trimmedName
                             binder.binderDescription = trimmedDescription.isEmpty ? nil : trimmedDescription
-                            binderStore.updateBinder(binder)
+                            try? modelContext.save()
                         }
                         editingBinderId = nil
                         editedBinderName = ""

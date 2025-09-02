@@ -93,11 +93,8 @@ struct PrayerRequestListView: View {
                     
                     // Content
                     if filteredRequests.isEmpty {
-                        HStack {
-                            Spacer()
-                            emptyStateView
-                            Spacer()
-                        }
+                        emptyStateView
+                            .frame(maxWidth: .infinity, minHeight: 400)
                     } else {
                         requestsListContent
                     }

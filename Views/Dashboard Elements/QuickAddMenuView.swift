@@ -81,7 +81,6 @@ struct QuickAddMenuView: View {
                             
                             Text("Tags")
                                 .font(.body)
-                                .fontWeight(.medium)
                                 .foregroundColor(.primary)
                             
                             Spacer()
@@ -101,7 +100,6 @@ struct QuickAddMenuView: View {
                             
                             Text("Speakers")
                                 .font(.body)
-                                .fontWeight(.medium)
                                 .foregroundColor(.primary)
                             
                             Spacer()
@@ -121,7 +119,6 @@ struct QuickAddMenuView: View {
                             
                             Text("Prayer Categories")
                                 .font(.body)
-                                .fontWeight(.medium)
                                 .foregroundColor(.primary)
                             
                             Spacer()
@@ -141,7 +138,6 @@ struct QuickAddMenuView: View {
                             
                             Text("Binders")
                                 .font(.body)
-                                .fontWeight(.medium)
                                 .foregroundColor(.primary)
                             
                             Spacer()

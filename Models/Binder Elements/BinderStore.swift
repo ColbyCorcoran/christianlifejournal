@@ -24,16 +24,23 @@ class BinderStore: ObservableObject {
     // MARK: - Data Management
     
     func refresh() {
+        // Skip refresh in preview mode or if context seems invalid
+        if ProcessInfo.processInfo.environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1" {
+            return
+        }
+        
         let descriptor = FetchDescriptor<Binder>(
             predicate: #Predicate { !$0.isArchived },
             sortBy: [SortDescriptor(\.dateCreated, order: .reverse)]
         )
         
+        // Wrap the entire operation in a try-catch to prevent crashes
         do {
-            binders = try modelContext.fetch(descriptor)
+            let fetchedBinders = try modelContext.fetch(descriptor)
+            binders = fetchedBinders
         } catch {
-            print("Error fetching binders: \(error)")
-            binders = []
+            print("⚠️ BinderStore refresh error: \(error.localizedDescription)")
+            // Keep existing binders rather than clearing them
         }
     }
     
@@ -201,7 +208,13 @@ class BinderStore: ObservableObject {
     }
     
     func bindersContaining(journalEntryID: UUID) -> [Binder] {
-        return binders.filter { $0.contains(journalEntryID: journalEntryID) }
+        // Don't refresh automatically to avoid potential context issues
+        // refresh()
+        
+        // Filter binders that contain the journal entry
+        return binders.filter { binder in
+            binder.contains(journalEntryID: journalEntryID)
+        }
     }
     
     func bindersContaining(scriptureEntryID: UUID) -> [Binder] {

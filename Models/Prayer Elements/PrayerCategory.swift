@@ -7,11 +7,12 @@
 
 import SwiftUI
 import SwiftData
+import CloudKit
 
 @Model
 class PrayerCategory {
-    var id: UUID
-    var name: String
+    var id: UUID = UUID()
+    var name: String = ""
     
     init(name: String) {
         self.id = UUID()

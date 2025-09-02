@@ -36,10 +36,13 @@ struct SearchableListLayout<Content: View>: View {
     
     var body: some View {
         VStack(spacing: 0) {
-            // Content area
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.appWhite)
+            // Content area - make scrollable to handle overflow
+            ScrollView {
+                content
+                    .frame(maxWidth: .infinity)
+            }
+            .frame(maxHeight: .infinity)
+            .background(Color.appWhite)
             
             // Fixed bottom search section
             VStack(spacing: 0) {

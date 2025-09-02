@@ -178,7 +178,6 @@ struct PrayerJournalListView: View {
                 
                 Spacer(minLength: 120) // Space for search bar
             }
-            .padding(.top)
         }
         .navigationBarBackButtonHidden()
         .toolbar {

@@ -10,7 +10,7 @@ import SwiftData
 
 @Model
 class Speaker {
-    @Attribute(.unique) var id: UUID = UUID()
+    var id: UUID = UUID()
     var name: String = ""
     
     init(name: String) {

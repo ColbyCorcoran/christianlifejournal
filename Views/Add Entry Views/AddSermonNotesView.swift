@@ -366,7 +366,7 @@ struct AddSermonNotesView: View {
                     Spacer()
                     
                     Image(systemName: selectedTagIDs.isEmpty ? "tag" : "tag.fill")
-                        .foregroundColor(selectedTagIDs.isEmpty ? .gray : .appGreenDark)
+                        .foregroundColor(.appGreenDark)
                 }
                 .padding(8)
                 .background(

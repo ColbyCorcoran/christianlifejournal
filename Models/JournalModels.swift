@@ -7,15 +7,16 @@
 
 import Foundation
 import SwiftData
+import CloudKit
 
 
 
 @Model
 class JournalEntry: Hashable {
-    @Attribute(.unique) var id: UUID = UUID()
-    var section: String
-    var title: String
-    var date: Date
+    var id: UUID = UUID()
+    var section: String = ""
+    var title: String = ""
+    var date: Date = Date()
 
     // Optional fields for specialized sections
     var bodyText: String?

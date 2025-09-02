@@ -394,16 +394,18 @@ struct ScriptureMemorizationListView: View {
                 // Empty state if no verses need completion today
                 if phases.phase1.isEmpty && phases.phase2.isEmpty && phases.phase3.isEmpty {
                     Section {
-                        VStack(spacing: 12) {
+                        VStack(spacing: 16) {
+                            Spacer()
+                            
                             if filteredEntries.isEmpty {
                                 if !searchText.isEmpty || selectedPhase != nil {
                                     // Filtered empty state
                                     Image(systemName: "magnifyingglass")
                                         .font(.system(size: 48))
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(.gray.opacity(0.6))
                                     Text("No Results")
                                         .font(.headline)
-                                        .foregroundColor(.appGreenDark)
+                                        .foregroundColor(.secondary)
                                     Text("Try adjusting your search or filters")
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
@@ -411,10 +413,10 @@ struct ScriptureMemorizationListView: View {
                                     // No verses added yet
                                     Image(systemName: "book.closed")
                                         .font(.system(size: 48))
-                                        .foregroundColor(.gray)
+                                        .foregroundColor(.gray.opacity(0.6))
                                     Text("No verses added yet")
                                         .font(.headline)
-                                        .foregroundColor(.appGreenDark)
+                                        .foregroundColor(.secondary)
                                     Text("Tap the + button to add your first verse")
                                         .font(.subheadline)
                                         .foregroundColor(.secondary)
@@ -437,6 +439,8 @@ struct ScriptureMemorizationListView: View {
                                     .multilineTextAlignment(.center)
                                     .padding(.top, 8)
                             }
+                            
+                            Spacer()
                         }
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 40)
@@ -457,14 +461,16 @@ struct ScriptureMemorizationListView: View {
         if filteredEntries.isEmpty {
             // Empty state for all verses view
             VStack(spacing: 16) {
+                Spacer()
+                
                 if !searchText.isEmpty || selectedPhase != nil {
                     // Filtered empty state
                     Image(systemName: "magnifyingglass")
                         .font(.system(size: 48))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.gray.opacity(0.6))
                     Text("No Results")
                         .font(.headline)
-                        .foregroundColor(.appGreenDark)
+                        .foregroundColor(.secondary)
                     Text("Try adjusting your search or filters")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
@@ -473,15 +479,17 @@ struct ScriptureMemorizationListView: View {
                     // No verses added yet
                     Image(systemName: "book.closed")
                         .font(.system(size: 48))
-                        .foregroundColor(.gray)
+                        .foregroundColor(.gray.opacity(0.6))
                     Text("No verses added yet")
                         .font(.headline)
-                        .foregroundColor(.appGreenDark)
+                        .foregroundColor(.secondary)
                     Text("Tap the + button to add your first verse")
                         .font(.subheadline)
                         .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                 }
+                
+                Spacer()
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .padding()
